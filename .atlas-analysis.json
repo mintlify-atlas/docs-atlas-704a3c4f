@@ -1,0 +1,101 @@
+{
+  "projectType": "saas",
+  "projectName": "OpenCode Portal",
+  "projectDescription": "Mobile-first web UI for OpenCode with git integration, browser terminal, and isolated workspaces",
+  "theme": "palm",
+  "primaryColor": "#0ea5e9",
+  "lightColor": "#38bdf8",
+  "darkColor": "#0284c7",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Installation",
+            "pages": [
+              "installation/local",
+              "installation/remote",
+              "installation/docker"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/sessions",
+              "features/chat-interface",
+              "features/git-integration",
+              "features/file-mentions",
+              "features/instance-management"
+            ]
+          },
+          {
+            "group": "CLI Reference",
+            "pages": [
+              "cli/overview",
+              "cli/commands",
+              "cli/options"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/mobile-access",
+              "guides/tailscale-setup",
+              "guides/multiple-projects",
+              "guides/troubleshooting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Server API",
+            "pages": [
+              "api/overview",
+              "api/sessions",
+              "api/git",
+              "api/files",
+              "api/instances"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Mobile-first responsive web UI for OpenCode",
+    "Session management and chat interface",
+    "Git integration with diff viewing",
+    "File mention support (@filename)",
+    "Instance management across multiple projects",
+    "Docker and process-based deployment",
+    "Remote access via Tailscale/VPN",
+    "Real-time AI chat assistant",
+    "Model selection and configuration",
+    "Dark/light theme support"
+  ],
+  "publicApiSurface": [
+    "openportal (default command - start OpenCode + Web UI)",
+    "openportal run (start OpenCode server only)",
+    "openportal stop (stop instances)",
+    "openportal list (list running instances)",
+    "openportal clean (clean stale entries)",
+    "GET /opencode/:port/session (list sessions)",
+    "POST /opencode/:port/session (create session)",
+    "DELETE /opencode/:port/session/:id (delete session)",
+    "GET /opencode/:port/git/diff (get git diff)",
+    "GET /opencode/:port/files/search (search files)",
+    "GET /opencode/:port/project/current (get current project)",
+    "GET /instances (list portal instances)"
+  ]
+}
