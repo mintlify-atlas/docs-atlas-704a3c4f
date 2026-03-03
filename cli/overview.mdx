@@ -1,0 +1,247 @@
+---
+title: CLI Overview
+description: Introduction to the OpenPortal CLI tool for running OpenCode with a web UI
+---
+
+## What is OpenPortal CLI?
+
+OpenPortal CLI is a command-line tool that launches OpenCode with an integrated web UI, making it easy to interact with OpenCode through a browser interface. It manages both the OpenCode server and the web UI as separate processes or Docker containers.
+
+## Architecture
+
+OpenPortal operates with a dual-server architecture:
+
+### Components
+
+1. **OpenCode Server** - The core AI coding assistant that processes requests
+2. **Web UI Server** - A web interface for interacting with OpenCode
+3. **Configuration Manager** - Stores instance state in `~/.portal.json`
+
+### Deployment Modes
+
+OpenPortal supports two deployment modes:
+
+#### Process Mode (Default)
+Both OpenCode and the Web UI run as local processes on your machine. This is the default and fastest mode for local development.
+
+```bash
+openportal
+```
+
+#### Docker Mode
+OpenCode runs in a Docker container while the Web UI runs locally. This mode provides better isolation and consistency across different environments.
+
+```bash
+openportal --docker
+```
+
+### Instance Management
+
+OpenPortal maintains a configuration file at `~/.portal.json` that tracks all running instances. Each instance includes:
+
+- Unique identifier
+- Instance name
+- Working directory
+- Port assignments (Web UI and OpenCode)
+- Process IDs or Container IDs
+- Deployment mode (process or docker)
+- Startup timestamp
+
+### Port Allocation
+
+By default, OpenPortal automatically finds available ports:
+
+- **Web UI**: Port 3000 (customizable with `-p` or `--port`)
+- **OpenCode Server**: Port 4000 (customizable with `--opencode-port`)
+
+If the default ports are in use, OpenPortal automatically selects the next available port.
+
+## Quick Start
+
+### Start OpenPortal with Web UI
+
+```bash
+openportal
+```
+
+This starts both OpenCode and the Web UI in the current directory.
+
+### Start Only OpenCode Server
+
+```bash
+openportal run
+```
+
+This starts only the OpenCode server without the Web UI, useful when you want to connect your own client.
+
+### View Running Instances
+
+```bash
+openportal list
+```
+
+### Stop an Instance
+
+```bash
+openportal stop
+```
+
+## Configuration File
+
+OpenPortal stores its configuration at `~/.portal.json`. The file contains:
+
+```json
+{
+  "instances": [
+    {
+      "id": "abc123",
+      "name": "my-project",
+      "directory": "/home/user/my-project",
+      "port": 3000,
+      "opencodePort": 4000,
+      "hostname": "0.0.0.0",
+      "opencodePid": 12345,
+      "webPid": 12346,
+      "startedAt": "2026-03-03T10:30:00.000Z",
+      "instanceType": "process",
+      "containerId": null
+    }
+  ]
+}
+```
+
+<Warning>
+Do not manually edit `~/.portal.json` while instances are running. Use the CLI commands to manage instances instead.
+</Warning>
+
+## Environment Variables
+
+<ParamField path="OPENCODE_DOCKER_IMAGE" type="string" default="ghcr.io/anomalyco/opencode:1.1.3">
+  Docker image to use when running in Docker mode
+</ParamField>
+
+<ParamField path="DOCKER_HOST" type="string" default="platform-specific">
+  Docker daemon connection string (e.g., `tcp://localhost:2375`, `unix:///var/run/docker.sock`)
+</ParamField>
+
+<ParamField path="DEBUG" type="boolean" default="false">
+  Enable debug logging for Docker operations
+</ParamField>
+
+## Directory Behavior
+
+OpenPortal uses the working directory as the root for OpenCode operations. You can specify the directory in several ways:
+
+```bash
+# Use current directory
+openportal
+
+# Specify directory as first argument
+openportal /path/to/project
+
+# Use current directory shorthand
+openportal .
+
+# Use --directory flag
+openportal --directory /path/to/project
+
+# Short form
+openportal -d /path/to/project
+```
+
+## Instance Naming
+
+By default, OpenPortal names instances after the directory basename. You can specify a custom name:
+
+```bash
+openportal --name my-custom-name
+```
+
+Instance names help identify multiple instances when using `openportal list`.
+
+## Docker Mode Details
+
+When running in Docker mode (`--docker`):
+
+### Mount Behavior
+- Your working directory is mounted into the container at the same path
+- The container runs with read-write access to the mounted directory
+- Container is configured with `AutoRemove: true` for automatic cleanup
+
+### Security Validations
+
+OpenPortal prevents mounting sensitive system directories:
+
+**Unix/Linux:**
+- `/`, `/etc`, `/usr`, `/bin`, `/sbin`, `/lib`, `/lib64`, `/boot`, `/dev`, `/proc`, `/sys`, `/run`, `/var/run`, `/root`
+
+**Windows:**
+- `C:/`, `C:/Windows`, `C:/Program Files`, `C:/Program Files (x86)`, `C:/ProgramData`
+
+### Container Lifecycle
+
+```bash
+# Start with Docker
+openportal --docker
+# Container is created and started
+
+# Stop the instance
+openportal stop
+# Container is stopped and automatically removed
+```
+
+## Common Workflows
+
+### Development Workflow
+
+```bash
+# Start OpenPortal in your project
+cd /path/to/project
+openportal
+
+# Access Web UI at http://localhost:3000
+# Work with OpenCode through the browser
+
+# Stop when done
+openportal stop
+```
+
+### Multiple Projects
+
+```bash
+# Start instance for project A
+cd /path/to/project-a
+openportal --name project-a
+
+# Start instance for project B
+cd /path/to/project-b
+openportal --name project-b
+
+# List all instances
+openportal list
+
+# Stop specific instance
+cd /path/to/project-a
+openportal stop
+```
+
+### Docker Deployment
+
+```bash
+# Start with Docker for consistency
+openportal --docker
+
+# Or start only OpenCode in Docker
+openportal run --docker
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Commands" icon="terminal" href="/cli/commands">
+    Explore all available commands
+  </Card>
+  <Card title="Options" icon="sliders" href="/cli/options">
+    Learn about command-line options
+  </Card>
+</CardGroup>

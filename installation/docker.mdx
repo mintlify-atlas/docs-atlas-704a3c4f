@@ -1,0 +1,468 @@
+---
+title: Docker Deployment
+description: Run OpenCode Portal with Docker for containerized environments
+---
+
+OpenCode Portal supports running OpenCode in Docker containers, providing isolation and easier deployment management.
+
+## Overview
+
+OpenPortal can run OpenCode in a Docker container while keeping the web UI as a host process. This provides:
+
+- Isolated OpenCode environment
+- Consistent runtime across different systems
+- Easy cleanup and management
+- No need to install OpenCode locally
+
+## Prerequisites
+
+<Steps>
+  <Step title="Install Docker">
+    Ensure Docker is installed and running on your system.
+
+    <CodeGroup>
+      ```bash Ubuntu/Debian
+      # Install Docker
+      curl -fsSL https://get.docker.com -o get-docker.sh
+      sudo sh get-docker.sh
+
+      # Add your user to docker group
+      sudo usermod -aG docker $USER
+
+      # Log out and back in for group changes to take effect
+      ```
+
+      ```bash macOS
+      # Install Docker Desktop
+      brew install --cask docker
+
+      # Start Docker Desktop from Applications
+      ```
+
+      ```bash Windows
+      # Download and install Docker Desktop from:
+      # https://www.docker.com/products/docker-desktop
+      ```
+    </CodeGroup>
+
+    Verify Docker installation:
+
+    ```bash
+    docker --version
+    docker ps
+    ```
+  </Step>
+
+  <Step title="Install Bun">
+    OpenPortal requires Bun to run the web UI:
+
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
+  </Step>
+
+  <Step title="Install OpenPortal">
+    Install OpenPortal globally:
+
+    <CodeGroup>
+      ```bash Bun (Recommended)
+      bun install -g openportal
+      ```
+
+      ```bash npm
+      npm install -g openportal
+      ```
+    </CodeGroup>
+
+    <Note>
+      You do NOT need to install OpenCode when using Docker mode - the container includes it.
+    </Note>
+  </Step>
+</Steps>
+
+## Running with Docker
+
+### Start OpenCode + Web UI in Docker Mode
+
+Use the `--docker` flag to run OpenCode in a container:
+
+```bash
+cd /path/to/your/project
+openportal --docker
+```
+
+This will:
+
+1. Pull the OpenCode Docker image (if not already available)
+2. Create and start a container with your project directory mounted
+3. Start the web UI on the host
+
+### Start Only OpenCode Server in Docker
+
+```bash
+openportal run --docker
+```
+
+This starts only the OpenCode server in a Docker container without the web UI.
+
+## Docker Configuration
+
+### Default Docker Image
+
+By default, OpenPortal uses:
+
+```
+ghcr.io/anomalyco/opencode:1.1.3
+```
+
+### Custom Docker Image
+
+You can specify a custom OpenCode Docker image using the `OPENCODE_DOCKER_IMAGE` environment variable:
+
+```bash
+OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:latest openportal --docker
+```
+
+Or export it for persistent use:
+
+```bash
+export OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:latest
+openportal --docker
+```
+
+### Remote Docker Host
+
+To connect to a remote Docker daemon, use the `DOCKER_HOST` environment variable:
+
+```bash
+# TCP connection
+export DOCKER_HOST=tcp://192.168.1.100:2375
+openportal --docker
+
+# Unix socket (default)
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Windows named pipe
+export DOCKER_HOST=npipe:////./pipe/docker_engine
+```
+
+## CLI Options with Docker
+
+All standard OpenPortal options work with Docker mode:
+
+### Custom Ports
+
+```bash
+# Custom web UI and OpenCode ports
+openportal --docker --port 8080 --opencode-port 5000
+```
+
+### Custom Directory
+
+```bash
+# Run in specific directory
+openportal --docker -d /path/to/project
+```
+
+### Custom Instance Name
+
+```bash
+# Name your container instance
+openportal --docker --name my-project
+```
+
+### Hostname Binding
+
+```bash
+# Bind to specific hostname
+openportal --docker --hostname 0.0.0.0
+```
+
+## Managing Docker Instances
+
+### List Running Instances
+
+```bash
+openportal list
+```
+
+Output includes Docker container information:
+
+```
+ID      NAME            TYPE      PORT  OPENCODE  STATUS      DIRECTORY
+abc123  my-project      docker    3000  4000      running     /home/user/project
+```
+
+### Stop Docker Instances
+
+```bash
+# Stop instance in current directory
+openportal stop
+
+# Stop specific instance
+openportal stop --name my-project
+```
+
+This will:
+
+1. Stop the Docker container
+2. Remove the container (auto-cleanup)
+3. Stop the web UI process
+
+### Clean Up Stale Entries
+
+```bash
+openportal clean
+```
+
+Removes stopped containers and cleans up configuration entries.
+
+## Volume Mounts
+
+OpenPortal automatically mounts your project directory into the container:
+
+```
+/path/to/your/project -> /path/to/your/project (read-write)
+```
+
+The container's working directory is set to your project path, so OpenCode operates on your files directly.
+
+<Warning>
+  For security, OpenPortal prevents mounting sensitive system directories like `/`, `/etc`, `/usr`, etc.
+</Warning>
+
+## Port Mapping
+
+The OpenCode server port is exposed from the container:
+
+```
+Container Port -> Host Port
+4000 (or custom) -> 4000 (or custom)
+```
+
+The web UI runs on the host and connects to the containerized OpenCode server via the exposed port.
+
+## Container Lifecycle
+
+### Container Naming
+
+Containers are automatically named:
+
+```
+openportal-{instance-name}-{random-id}
+```
+
+Example: `openportal-my-project-a1b2c3d4`
+
+### Auto-Removal
+
+Containers are created with the `AutoRemove` flag, meaning they're automatically removed when stopped.
+
+### Container Logs
+
+View container logs directly:
+
+```bash
+# Get container ID from openportal list
+openportal list
+
+# View logs
+docker logs <container-id>
+
+# Follow logs
+docker logs -f <container-id>
+```
+
+## Advanced Docker Usage
+
+### Multiple Projects
+
+Run multiple projects simultaneously:
+
+```bash
+# Terminal 1
+cd /path/to/project-a
+openportal --docker --port 3000 --opencode-port 4000
+
+# Terminal 2
+cd /path/to/project-b
+openportal --docker --port 3001 --opencode-port 4001
+```
+
+### Server-Only Mode with Docker
+
+Run only the OpenCode server in Docker:
+
+```bash
+openportal run --docker
+```
+
+This is useful when:
+
+- You want to use a different UI
+- You're integrating with external tools
+- You only need the OpenCode API
+
+### Inspecting Containers
+
+```bash
+# List all OpenPortal containers
+docker ps -a | grep openportal
+
+# Inspect a specific container
+docker inspect <container-id>
+
+# Execute commands in the container
+docker exec -it <container-id> /bin/bash
+```
+
+## Environment Variables
+
+### OPENCODE_DOCKER_IMAGE
+
+Specify the OpenCode Docker image to use:
+
+```bash
+export OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:1.1.3
+```
+
+### DOCKER_HOST
+
+Specify the Docker daemon connection:
+
+```bash
+# TCP connection
+export DOCKER_HOST=tcp://localhost:2375
+
+# Unix socket (default on Linux/macOS)
+export DOCKER_HOST=unix:///var/run/docker.sock
+
+# Named pipe (Windows)
+export DOCKER_HOST=npipe:////./pipe/docker_engine
+```
+
+### DEBUG
+
+Enable debug output for troubleshooting:
+
+```bash
+export DEBUG=1
+openportal --docker
+```
+
+## Troubleshooting
+
+### Docker Image Pull Issues
+
+If the image fails to pull:
+
+```bash
+# Manually pull the image
+docker pull ghcr.io/anomalyco/opencode:1.1.3
+
+# Verify the image exists
+docker images | grep opencode
+```
+
+### Container Won't Start
+
+Check container logs:
+
+```bash
+# List all containers (including stopped)
+docker ps -a | grep openportal
+
+# View logs
+docker logs <container-id>
+```
+
+### Port Already in Use
+
+Specify different ports:
+
+```bash
+openportal --docker --port 8080 --opencode-port 5000
+```
+
+### Volume Mount Errors
+
+Ensure the path is absolute:
+
+```bash
+# Bad - relative path
+openportal --docker -d ./my-project
+
+# Good - absolute path
+openportal --docker -d /home/user/my-project
+```
+
+### Permission Issues
+
+On Linux, ensure your user is in the docker group:
+
+```bash
+sudo usermod -aG docker $USER
+# Log out and back in
+```
+
+### Container Not Stopping
+
+Manually stop and remove:
+
+```bash
+# List containers
+docker ps | grep openportal
+
+# Force stop
+docker stop <container-id>
+
+# Force remove
+docker rm <container-id>
+
+# Clean up config
+openportal clean
+```
+
+### Connection Refused
+
+Verify the container is running and port is exposed:
+
+```bash
+# Check container status
+docker ps | grep openportal
+
+# Check port mapping
+docker port <container-id>
+```
+
+## Benefits of Docker Mode
+
+### Isolation
+
+- OpenCode runs in an isolated environment
+- No interference with host system packages
+- Clean separation of concerns
+
+### Consistency
+
+- Same OpenCode version across all environments
+- Reproducible builds and deployments
+- Easy version management via image tags
+
+### Easy Cleanup
+
+- Containers auto-remove when stopped
+- No residual files on host system
+- Simple instance management
+
+### No Local Installation
+
+- No need to install OpenCode on host
+- No dependency conflicts
+- Works on any system with Docker
+
+## Next Steps
+
+- Learn about [local installation](/installation/local) for non-Docker setups
+- Explore [remote server deployment](/installation/remote) with Tailscale
+- Configure custom Docker images for your workflow

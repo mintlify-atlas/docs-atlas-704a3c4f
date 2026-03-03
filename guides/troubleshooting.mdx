@@ -1,0 +1,919 @@
+---
+title: Troubleshooting Guide
+description: Common issues and solutions for OpenCode Portal
+---
+
+## Getting Help
+
+Before diving into troubleshooting, here are the best ways to get help:
+
+<CardGroup cols={2}>
+  <Card title="Discord Community" icon="discord" href="https://discord.gg/7UJ5KYfhNE">
+    Join the community for real-time help and discussions
+  </Card>
+  
+  <Card title="GitHub Issues" icon="github" href="https://github.com/hosenur/portal/issues">
+    Report bugs and request features
+  </Card>
+</CardGroup>
+
+## Quick Diagnostics
+
+Run these commands to quickly diagnose common issues:
+
+```bash
+# Check if Portal is running
+openportal list
+
+# Check if OpenCode is installed
+which opencode
+
+# Check Bun version (recommended: latest)
+bun --version
+
+# Check available ports
+lsof -i :3000
+lsof -i :4000
+
+# Check system resources
+free -h
+df -h
+```
+
+## Installation Issues
+
+<AccordionGroup>
+  <Accordion title="Command not found: openportal">
+    **Symptom:** Shell can't find the `openportal` command
+    
+    **Solutions:**
+    
+    1. **Verify installation:**
+       ```bash
+       bun pm ls -g | grep openportal
+       ```
+    
+    2. **Reinstall globally:**
+       ```bash
+       bun install -g openportal
+       ```
+    
+    3. **Check Bun global bin path:**
+       ```bash
+       echo $PATH | grep .bun
+       ```
+       
+       If not present, add to your shell profile:
+       ```bash
+       # For bash (~/.bashrc)
+       export PATH="$HOME/.bun/bin:$PATH"
+       
+       # For zsh (~/.zshrc)
+       export PATH="$HOME/.bun/bin:$PATH"
+       
+       # Reload shell
+       source ~/.bashrc  # or ~/.zshrc
+       ```
+    
+    4. **Use bunx instead:**
+       ```bash
+       bunx openportal
+       ```
+  </Accordion>
+
+  <Accordion title="Command not found: opencode">
+    **Symptom:** Portal can't find OpenCode installation
+    
+    **Solution:** Install OpenCode:
+    
+    ```bash
+    # Using Bun
+    bun install -g opencode
+    
+    # Or using Homebrew (macOS)
+    brew install sst/tap/opencode
+    
+    # Verify installation
+    which opencode
+    opencode --version
+    ```
+  </Accordion>
+
+  <Accordion title="Installation fails with permission errors">
+    **Symptom:** `EACCES` or permission denied errors during install
+    
+    **Solutions:**
+    
+    1. **Don't use sudo with Bun:**
+       ```bash
+       # Wrong
+       sudo bun install -g openportal
+       
+       # Correct
+       bun install -g openportal
+       ```
+    
+    2. **Fix Bun permissions:**
+       ```bash
+       chown -R $USER ~/.bun
+       ```
+    
+    3. **Reinstall Bun:**
+       ```bash
+       curl -fsSL https://bun.sh/install | bash
+       ```
+  </Accordion>
+
+  <Accordion title="Node.js compatibility issues">
+    **Symptom:** Errors when running with Node.js instead of Bun
+    
+    **Solution:**
+    
+    <Warning>
+      OpenPortal works best with Bun. Node.js may have rough edges.
+    </Warning>
+    
+    Install and use Bun:
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    bun install -g openportal
+    ```
+    
+    If you must use Node.js:
+    ```bash
+    npm install -g openportal
+    # May encounter issues - Bun is recommended
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Startup Issues
+
+<AccordionGroup>
+  <Accordion title="Portal won't start - Port already in use">
+    **Symptom:** Error message about port 3000 or 4000 being busy
+    
+    **Solutions:**
+    
+    1. **Let Portal auto-find ports:**
+       ```bash
+       openportal
+       # Will automatically use 3001, 3002, etc. if 3000 is busy
+       ```
+    
+    2. **Specify different ports:**
+       ```bash
+       openportal --port 3010 --opencode-port 4010
+       ```
+    
+    3. **Find what's using the port:**
+       ```bash
+       lsof -i :3000
+       # Kill the process if safe
+       kill <PID>
+       ```
+    
+    4. **Stop existing Portal instances:**
+       ```bash
+       openportal stop --all
+       ```
+  </Accordion>
+
+  <Accordion title="OpenCode server fails to start">
+    **Symptom:** Web UI loads but can't connect to OpenCode server
+    
+    **Debug steps:**
+    
+    1. **Check if OpenCode port is accessible:**
+       ```bash
+       curl http://localhost:4000
+       ```
+    
+    2. **Try starting OpenCode manually:**
+       ```bash
+       opencode --port 4000
+       ```
+       
+       Look for error messages in the output.
+    
+    3. **Check OpenCode logs:**
+       ```bash
+       ls ~/.config/opencode/logs/
+       tail -f ~/.config/opencode/logs/latest.log
+       ```
+    
+    4. **Verify working directory exists:**
+       ```bash
+       pwd
+       ls -la
+       ```
+    
+    5. **Check disk space:**
+       ```bash
+       df -h .
+       ```
+  </Accordion>
+
+  <Accordion title="Portal starts but shows blank page">
+    **Symptom:** Browser shows empty white page or loading forever
+    
+    **Solutions:**
+    
+    1. **Hard refresh the page:**
+       - Chrome/Firefox: Ctrl+Shift+R (Cmd+Shift+R on Mac)
+       - Safari: Cmd+Option+R
+    
+    2. **Clear browser cache:**
+       - Chrome: Settings > Privacy > Clear browsing data
+       - Firefox: Preferences > Privacy > Clear Data
+       - Safari: Preferences > Privacy > Manage Website Data
+    
+    3. **Check browser console for errors:**
+       - Open DevTools: F12 or Ctrl+Shift+I
+       - Look for errors in Console tab
+    
+    4. **Try different browser:**
+       ```bash
+       # Test in another browser to isolate issue
+       ```
+    
+    5. **Check if server is actually responding:**
+       ```bash
+       curl http://localhost:3000
+       # Should return HTML
+       ```
+  </Accordion>
+
+  <Accordion title="Can't access Portal from other machines">
+    **Symptom:** Portal works on localhost but not from other devices
+    
+    **Solutions:**
+    
+    1. **Bind to all interfaces:**
+       ```bash
+       openportal --hostname 0.0.0.0
+       ```
+    
+    2. **Check firewall rules:**
+       ```bash
+       # Ubuntu/Debian
+       sudo ufw status
+       sudo ufw allow 3000/tcp
+       
+       # CentOS/RHEL
+       sudo firewall-cmd --list-ports
+       sudo firewall-cmd --permanent --add-port=3000/tcp
+       sudo firewall-cmd --reload
+       ```
+    
+    3. **Verify Portal is listening on 0.0.0.0:**
+       ```bash
+       netstat -tlnp | grep 3000
+       # Should show 0.0.0.0:3000, not 127.0.0.1:3000
+       ```
+    
+    4. **Test connectivity:**
+       ```bash
+       # From another machine
+       ping your-server-ip
+       curl http://your-server-ip:3000
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Connection Issues
+
+<AccordionGroup>
+  <Accordion title="Lost connection to OpenCode server">
+    **Symptom:** "Connection lost" or "Reconnecting..." messages
+    
+    **Solutions:**
+    
+    1. **Check if OpenCode server is running:**
+       ```bash
+       openportal list
+       ps aux | grep opencode
+       ```
+    
+    2. **Restart Portal:**
+       ```bash
+       openportal stop
+       openportal
+       ```
+    
+    3. **Check server logs:**
+       ```bash
+       tail -f ~/.config/opencode/logs/latest.log
+       ```
+    
+    4. **Verify network connectivity:**
+       ```bash
+       curl http://localhost:4000
+       ```
+    
+    5. **Check for resource issues:**
+       ```bash
+       top
+       free -h
+       ```
+  </Accordion>
+
+  <Accordion title="Slow or laggy responses">
+    **Symptom:** Portal feels sluggish, AI responses take very long
+    
+    **Debug steps:**
+    
+    1. **Check system resources:**
+       ```bash
+       htop
+       # Look for high CPU or memory usage
+       ```
+    
+    2. **Check disk I/O:**
+       ```bash
+       iostat -x 1
+       ```
+    
+    3. **Verify network latency (for remote access):**
+       ```bash
+       ping your-server
+       traceroute your-server
+       ```
+    
+    4. **Check OpenCode model settings:**
+       - Larger models (GPT-4, Claude Opus) are slower
+       - Try a faster model for testing
+    
+    5. **Restart with clean state:**
+       ```bash
+       openportal stop
+       openportal clean
+       openportal
+       ```
+  </Accordion>
+
+  <Accordion title="WebSocket connection fails">
+    **Symptom:** Real-time updates not working, need to refresh manually
+    
+    **Solutions:**
+    
+    1. **Check for reverse proxy issues:**
+       If using Nginx, ensure WebSocket headers are configured:
+       ```nginx
+       location / {
+           proxy_pass http://localhost:3000;
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_cache_bypass $http_upgrade;
+       }
+       ```
+    
+    2. **Check firewall doesn't block WebSockets:**
+       ```bash
+       # Test WebSocket connection
+       wscat -c ws://localhost:3000
+       ```
+    
+    3. **Browser extensions interfering:**
+       - Try in incognito/private mode
+       - Disable ad blockers and privacy extensions
+  </Accordion>
+</AccordionGroup>
+
+## Session Issues
+
+<AccordionGroup>
+  <Accordion title="Can't create new session">
+    **Symptom:** Create session button doesn't work or errors out
+    
+    **Solutions:**
+    
+    1. **Check OpenCode server is accessible:**
+       ```bash
+       curl http://localhost:4000/sessions
+       ```
+    
+    2. **Verify permissions on OpenCode config directory:**
+       ```bash
+       ls -la ~/.config/opencode/
+       chmod -R u+rw ~/.config/opencode/
+       ```
+    
+    3. **Check disk space:**
+       ```bash
+       df -h ~
+       ```
+    
+    4. **Try creating session via OpenCode CLI:**
+       ```bash
+       opencode
+       # If this works, issue is with Portal
+       # If this fails, issue is with OpenCode
+       ```
+  </Accordion>
+
+  <Accordion title="Sessions not showing up">
+    **Symptom:** Created sessions but they don't appear in the list
+    
+    **Debug:**
+    
+    1. **Check OpenCode sessions directory:**
+       ```bash
+       ls ~/.config/opencode/sessions/
+       ```
+    
+    2. **Verify API is returning sessions:**
+       ```bash
+       curl http://localhost:4000/sessions
+       ```
+    
+    3. **Refresh the browser:**
+       - F5 or Ctrl+R
+    
+    4. **Check browser console for errors:**
+       - F12 > Console tab
+  </Accordion>
+
+  <Accordion title="Can't delete sessions">
+    **Symptom:** Delete button doesn't work or session reappears
+    
+    **Solutions:**
+    
+    1. **Check file permissions:**
+       ```bash
+       ls -la ~/.config/opencode/sessions/
+       chmod -R u+rw ~/.config/opencode/sessions/
+       ```
+    
+    2. **Delete manually:**
+       ```bash
+       rm -rf ~/.config/opencode/sessions/<session-id>
+       ```
+    
+    3. **Verify not open in another instance:**
+       - Close all OpenCode instances
+       - Try deleting again
+  </Accordion>
+
+  <Accordion title="Session messages not loading">
+    **Symptom:** Open a session but messages don't appear
+    
+    **Solutions:**
+    
+    1. **Check session file exists:**
+       ```bash
+       ls ~/.config/opencode/sessions/<session-id>/
+       cat ~/.config/opencode/sessions/<session-id>/session.json
+       ```
+    
+    2. **Verify JSON is valid:**
+       ```bash
+       cat ~/.config/opencode/sessions/<session-id>/session.json | jq
+       # If jq fails, JSON is corrupted
+       ```
+    
+    3. **Check browser console:**
+       - F12 > Console > Look for parsing errors
+    
+    4. **Try opening in official OpenCode CLI:**
+       ```bash
+       opencode --resume <session-id>
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Mobile-Specific Issues
+
+<AccordionGroup>
+  <Accordion title="Can't access Portal from mobile via Tailscale">
+    **Symptom:** Portal works on server but not accessible from phone
+    
+    **Solutions:**
+    
+    1. **Verify Tailscale is connected on both devices:**
+       ```bash
+       # On server
+       tailscale status
+       
+       # On mobile: Check Tailscale app shows "Connected"
+       ```
+    
+    2. **Verify Portal bound to 0.0.0.0:**
+       ```bash
+       netstat -tlnp | grep 3000
+       # Should show 0.0.0.0:3000
+       ```
+    
+    3. **Test connectivity:**
+       ```bash
+       # On mobile (using terminal app)
+       ping server-name
+       curl http://server-name:3000
+       ```
+    
+    4. **Try IP address instead of hostname:**
+       ```bash
+       # On server, get Tailscale IP
+       tailscale ip -4
+       
+       # On mobile, use IP directly
+       http://100.x.x.x:3000
+       ```
+    
+    See [Tailscale Setup Guide](/guides/tailscale-setup) for detailed troubleshooting.
+  </Accordion>
+
+  <Accordion title="Portal UI not responsive on mobile">
+    **Symptom:** UI elements too small or not clickable on mobile
+    
+    **Solutions:**
+    
+    1. **Hard refresh the page:**
+       - Safari: Pull down to refresh
+       - Chrome: Menu > Reload
+    
+    2. **Clear mobile browser cache:**
+       - Safari: Settings > Safari > Clear History and Website Data
+       - Chrome: Settings > Privacy > Clear browsing data
+    
+    3. **Try different mobile browser:**
+       - iOS: Safari, Chrome, Firefox
+       - Android: Chrome, Firefox, Samsung Internet
+    
+    4. **Check if Desktop mode is enabled:**
+       - Disable "Request Desktop Site"
+    
+    5. **Report UI issue with screenshots:**
+       - [GitHub Issues](https://github.com/hosenur/portal/issues)
+  </Accordion>
+
+  <Accordion title="Mobile browser keeps disconnecting">
+    **Symptom:** Connection drops when switching apps or locking screen
+    
+    **iOS Solutions:**
+    - Settings > Tailscale > Allow unlimited background activity
+    - Disable Low Power Mode while using Portal
+    - Keep Portal tab active (don't close)
+    
+    **Android Solutions:**
+    - Settings > Apps > Tailscale > Battery > Unrestricted
+    - Settings > Apps > Browser > Battery > Unrestricted
+    - Enable "Always-on VPN" in Tailscale settings
+  </Accordion>
+</AccordionGroup>
+
+## Performance Issues
+
+<AccordionGroup>
+  <Accordion title="High memory usage">
+    **Symptom:** Portal or OpenCode consuming excessive RAM
+    
+    **Solutions:**
+    
+    1. **Check actual memory usage:**
+       ```bash
+       ps aux | grep opencode
+       ps aux | grep openportal
+       ```
+    
+    2. **Limit resources with systemd:**
+       ```ini
+       # In service file
+       [Service]
+       MemoryLimit=512M
+       ```
+    
+    3. **Delete old sessions:**
+       ```bash
+       # Clean up old sessions manually
+       ls ~/.config/opencode/sessions/
+       ```
+    
+    4. **Restart Portal regularly:**
+       ```bash
+       openportal stop
+       openportal
+       ```
+    
+    5. **Use lighter AI model:**
+       - Switch from Claude Opus to Sonnet
+       - Use GPT-3.5 instead of GPT-4
+  </Accordion>
+
+  <Accordion title="High CPU usage">
+    **Symptom:** Server CPU constantly high even when idle
+    
+    **Debug:**
+    
+    1. **Identify CPU-hungry process:**
+       ```bash
+       top
+       # Press 'P' to sort by CPU
+       ```
+    
+    2. **Check for infinite loops in code:**
+       - Review recent changes
+       - Check OpenCode logs for errors
+    
+    3. **Verify no stuck sessions:**
+       ```bash
+       openportal list
+       # Stop stuck instances
+       openportal stop --all
+       ```
+    
+    4. **Check for disk I/O bottleneck:**
+       ```bash
+       iostat -x 1
+       ```
+  </Accordion>
+
+  <Accordion title="Slow AI responses">
+    **Symptom:** AI takes very long to respond or times out
+    
+    **Factors:**
+    
+    1. **Model speed varies:**
+       - GPT-4, Claude Opus: Slowest but best quality
+       - GPT-4 Turbo, Claude Sonnet: Balanced
+       - GPT-3.5: Fastest but lower quality
+    
+    2. **API rate limits:**
+       - Check your OpenAI/Anthropic account for rate limits
+       - Upgrade API tier if needed
+    
+    3. **Network latency:**
+       ```bash
+       # Test API connectivity
+       curl -I https://api.openai.com
+       curl -I https://api.anthropic.com
+       ```
+    
+    4. **Large context:**
+       - Large codebases take longer to process
+       - Mention fewer files to reduce context
+    
+    5. **Check OpenCode logs:**
+       ```bash
+       tail -f ~/.config/opencode/logs/latest.log
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## File Operations
+
+<AccordionGroup>
+  <Accordion title="Can't mention files with @">
+    **Symptom:** File autocomplete doesn't work or files not found
+    
+    **Solutions:**
+    
+    1. **Verify you're in correct directory:**
+       ```bash
+       pwd
+       ls
+       ```
+    
+    2. **Check file permissions:**
+       ```bash
+       ls -la
+       # Files should be readable
+       ```
+    
+    3. **Relative vs absolute paths:**
+       - Use relative paths: `@src/index.ts`
+       - Not absolute: `~/project/src/index.ts`
+    
+    4. **File indexing:**
+       - OpenCode indexes files on start
+       - Restart if new files not appearing
+  </Accordion>
+
+  <Accordion title="Large files causing issues">
+    **Symptom:** Portal hangs when mentioning large files
+    
+    **Workarounds:**
+    
+    1. **Check file size:**
+       ```bash
+       ls -lh path/to/file
+       ```
+    
+    2. **Avoid mentioning very large files:**
+       - Binary files
+       - Generated files (build output, node_modules)
+       - Database dumps
+    
+    3. **Use .gitignore patterns:**
+       - OpenCode respects .gitignore
+       - Add large files to .gitignore
+    
+    4. **Mention specific sections:**
+       Instead of mentioning entire file, describe the section:
+       "The login function in @auth.ts around line 50"
+  </Accordion>
+</AccordionGroup>
+
+## Data and Configuration
+
+<AccordionGroup>
+  <Accordion title="How to reset Portal completely">
+    **To start fresh:**
+    
+    ```bash
+    # Stop all instances
+    openportal stop --all
+    
+    # Clean registry
+    openportal clean
+    
+    # Remove Portal config (if exists)
+    rm -rf ~/.config/openportal/
+    
+    # Remove OpenCode sessions (WARNING: deletes all sessions)
+    rm -rf ~/.config/opencode/sessions/
+    
+    # Reinstall Portal
+    bun install -g openportal
+    
+    # Start fresh
+    openportal
+    ```
+  </Accordion>
+
+  <Accordion title="Where is data stored?">
+    **Portal stores data in:**
+    
+    - Registry: `~/.config/openportal/registry.json`
+    - Logs: System logs (check with `journalctl` if using systemd)
+    
+    **OpenCode stores data in:**
+    
+    - Sessions: `~/.config/opencode/sessions/`
+    - Config: `~/.config/opencode/config.json`
+    - Logs: `~/.config/opencode/logs/`
+    
+    **Backup important data:**
+    ```bash
+    tar -czf opencode-backup.tar.gz ~/.config/opencode/sessions/
+    ```
+  </Accordion>
+
+  <Accordion title="How to migrate to new server">
+    **Migration steps:**
+    
+    1. **On old server, backup sessions:**
+       ```bash
+       tar -czf sessions-backup.tar.gz ~/.config/opencode/sessions/
+       scp sessions-backup.tar.gz new-server:
+       ```
+    
+    2. **On new server, install everything:**
+       ```bash
+       # Install Bun
+       curl -fsSL https://bun.sh/install | bash
+       
+       # Install OpenCode
+       bun install -g opencode
+       
+       # Install Portal
+       bun install -g openportal
+       ```
+    
+    3. **Restore sessions:**
+       ```bash
+       mkdir -p ~/.config/opencode
+       tar -xzf sessions-backup.tar.gz -C ~/
+       ```
+    
+    4. **Set up Tailscale:**
+       See [Tailscale Setup Guide](/guides/tailscale-setup)
+    
+    5. **Start Portal:**
+       ```bash
+       cd /path/to/project
+       openportal --hostname 0.0.0.0
+       ```
+  </Accordion>
+</AccordionGroup>
+
+## Error Messages
+
+<AccordionGroup>
+  <Accordion title="EADDRINUSE: address already in use">
+    **Meaning:** The port is already occupied by another process
+    
+    **Fix:**
+    ```bash
+    # Find what's using the port
+    lsof -i :3000
+    
+    # Kill the process or use different port
+    openportal --port 3010
+    ```
+  </Accordion>
+
+  <Accordion title="ECONNREFUSED: Connection refused">
+    **Meaning:** Can't connect to OpenCode server
+    
+    **Fix:**
+    ```bash
+    # Check if OpenCode is running
+    ps aux | grep opencode
+    
+    # Restart Portal
+    openportal stop
+    openportal
+    ```
+  </Accordion>
+
+  <Accordion title="ENOSPC: no space left on device">
+    **Meaning:** Disk is full
+    
+    **Fix:**
+    ```bash
+    # Check disk usage
+    df -h
+    
+    # Find large files
+    du -h --max-depth=1 ~ | sort -hr | head -20
+    
+    # Clean up old sessions
+    rm -rf ~/.config/opencode/sessions/old-session-id
+    
+    # Clean package caches
+    bun pm cache rm
+    npm cache clean --force
+    ```
+  </Accordion>
+
+  <Accordion title="ETIMEDOUT: Connection timeout">
+    **Meaning:** Network request took too long
+    
+    **Fix:**
+    ```bash
+    # Check network connectivity
+    ping 8.8.8.8
+    
+    # Test API endpoints
+    curl https://api.openai.com
+    
+    # Restart network/VPN
+    # For Tailscale:
+    sudo systemctl restart tailscaled
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Still Having Issues?
+
+<CardGroup cols={2}>
+  <Card title="Ask on Discord" icon="discord" href="https://discord.gg/7UJ5KYfhNE">
+    Get help from the community in real-time
+  </Card>
+  
+  <Card title="Open GitHub Issue" icon="github" href="https://github.com/hosenur/portal/issues/new">
+    Report bugs or request features
+  </Card>
+</CardGroup>
+
+**When asking for help, please include:**
+
+1. Operating system and version
+2. Bun version: `bun --version`
+3. OpenCode version: `opencode --version`
+4. Portal version: `openportal --version` (if available)
+5. Full error message or logs
+6. Steps to reproduce the issue
+7. What you've already tried
+
+**Gather diagnostic information:**
+
+```bash
+# System info
+uname -a
+bun --version
+opencode --version
+
+# Portal status
+openportal list
+
+# Check logs
+tail -50 ~/.config/opencode/logs/latest.log
+
+# Network info
+netstat -tlnp | grep -E '3000|4000'
+
+# Resource usage
+top -b -n 1 | head -20
+free -h
+df -h
+```
+
+## Next Steps
+
+- [Mobile Access Guide](/guides/mobile-access) - Access Portal from your phone
+- [Tailscale Setup](/guides/tailscale-setup) - Set up secure VPN access
+- [Multiple Projects](/guides/multiple-projects) - Manage multiple Portal instances

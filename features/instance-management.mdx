@@ -1,0 +1,314 @@
+---
+title: Instance Management  
+description: Connect to and manage multiple OpenCode Portal instances
+icon: server
+---
+
+OpenCode Portal supports connecting to multiple OpenCode instances simultaneously. Each instance represents a different project or workspace running the OpenCode server.
+
+## Understanding Instances
+
+### What is an Instance?
+
+An instance is a running OpenCode server associated with a specific project directory. Each instance:
+
+- Runs on a unique port (e.g., `:3000`, `:3001`)
+- Has its own sessions and conversation history
+- Operates independently from other instances
+- Maintains its own file context and workspace
+
+<Info>
+  Think of instances like different VS Code windows, each open to a different project folder.
+</Info>
+
+## Viewing Available Instances
+
+Access the instances page to see all running instances:
+
+1. Navigate to the instances page (typically from the sidebar or home)
+2. All active instances are displayed in a grid layout
+3. Each instance card shows key information
+
+### Instance Card Information
+
+<CardGroup cols={2}>
+  <Card title="Project Name" icon="folder">
+    The name of the directory (e.g., "my-app")
+  </Card>
+  <Card title="Port Number" icon="network-wired">
+    The local port the instance is running on (e.g., ":3000")
+  </Card>
+  <Card title="Full Path" icon="map-pin">
+    Complete directory path to the project
+  </Card>
+  <Card title="Status Indicator" icon="circle">
+    Live status with animated pulse for running instances
+  </Card>
+</CardGroup>
+
+## Connecting to an Instance
+
+To connect to an instance:
+
+1. Click on any instance card in the grid
+2. The instance is automatically selected
+3. You're redirected to the home screen for that instance
+4. All sessions and data are now scoped to this instance
+
+<Tip>
+  The currently connected instance name is shown in the sidebar footer.
+</Tip>
+
+## Instance Grid Layout
+
+The instances page features a responsive grid:
+
+- **Mobile**: Single column, stacked cards
+- **Tablet**: 2 columns
+- **Desktop**: 2 columns with larger cards
+
+Each card includes:
+
+- **Orange icon** - OpenCode logo with gradient background
+- **Project name** - Large, prominent display
+- **Port badge** - Shows port number in a pill
+- **Status indicator** - Animated green dot for running instances  
+- **Full path** - Monospace font showing complete directory path
+
+## Starting a New Instance
+
+To create a new instance:
+
+1. Open a terminal in your project directory
+2. Run `openportal run`
+3. The server starts on an available port
+4. Return to the instances page and refresh
+5. Your new instance appears in the list
+
+<CodeGroup>
+```bash Terminal
+cd ~/projects/my-app
+openportal run
+```
+
+```bash Alternative Port
+# Start on a specific port
+openportal run --port 3001
+```
+</CodeGroup>
+
+## Empty State
+
+If no instances are running:
+
+- A centered empty state appears
+- Shows a server icon with helpful text
+- Displays the command to start an instance: `openportal run`
+- Provides clear instructions for getting started
+
+<Warning>
+  You must have at least one instance running to use OpenCode Portal. Start one using `openportal run` in your project directory.
+</Warning>
+
+## Instance Status
+
+### Running Instances
+
+Active instances show:
+
+- **Green status indicator** - Animated pulsing dot
+- **Clickable card** - Can be selected and connected
+- **Full information** - All metadata visible
+
+### Instance Details
+
+Each instance card displays:
+
+```
+┌──────────────────────────────────────┐
+│  📦  my-app                    :3000 │
+│                                  🟢  │
+│  ~/projects/my-app                  │
+└──────────────────────────────────────┘
+```
+
+- Top row: Project name and port
+- Status indicator: Running state
+- Bottom: Full directory path
+
+## Switching Between Instances
+
+You can easily switch between instances:
+
+1. Click the current instance name in the sidebar footer
+2. Select "Manage Instances" or navigate to instances page
+3. Click a different instance card
+4. The entire UI updates to show that instance's data
+
+<Info>
+  Switching instances changes:
+  - Available sessions
+  - Current project context
+  - Git diff view
+  - File search results
+</Info>
+
+## Current Instance Indicator
+
+The sidebar footer shows which instance you're connected to:
+
+- **Instance name** - The project directory name
+- **Hostname** - Your machine's hostname
+- **Avatar** - Initials of your hostname
+
+### Instance Menu
+
+Click the instance info in the footer to access:
+
+- Dashboard link
+- Settings
+- Security options
+- Customer support
+- Logout option
+
+<Tip>
+  The menu shows both your hostname and the current instance name for quick reference.
+</Tip>
+
+## Instance Lifecycle
+
+### Starting Instances
+
+```bash
+# Start in current directory  
+openportal run
+
+# Start on specific port
+openportal run --port 3001
+
+# Start with specific config
+openportal run --config ./opencode.yml
+```
+
+### Stopping Instances
+
+To stop an instance:
+
+1. Press `Ctrl+C` in the terminal where it's running
+2. Or use your process manager to terminate it
+3. The instance disappears from the Portal instances list
+
+### Instance Persistence
+
+Instance data persists across restarts:
+
+- Sessions are saved to disk
+- Conversation history is preserved
+- Configuration is maintained
+- Project context is remembered
+
+## Multiple Projects Workflow
+
+### Common Patterns
+
+<AccordionGroup>
+  <Accordion title="Frontend + Backend">
+    Run two instances:
+    - Instance 1: Frontend project on port 3000
+    - Instance 2: Backend project on port 3001
+    - Switch between them as needed in Portal
+  </Accordion>
+  
+  <Accordion title="Microservices">
+    Run one instance per service:
+    - Each microservice has its own instance
+    - Independent chat contexts
+    - Isolated changes and sessions
+  </Accordion>
+  
+  <Accordion title="Client Projects">
+    Separate instance per client:
+    - Keep work completely isolated
+    - Different configurations per client
+    - Easy to switch contexts
+  </Accordion>
+</AccordionGroup>
+
+## Error Handling
+
+### Connection Errors
+
+If Portal can't fetch instances:
+
+- Error message appears in red
+- Shows specific error reason  
+- Lists available troubleshooting steps
+
+### Port Conflicts
+
+If a port is already in use:
+
+- OpenCode will try the next available port
+- Check the terminal output for the actual port
+- Update your connection if needed
+
+### Instance Not Responding
+
+If an instance stops responding:
+
+1. Check if the server is still running
+2. Restart the instance with `openportal run`
+3. Refresh the instances page
+4. Reconnect to the restarted instance
+
+<Warning>
+  If you stop an instance, its active sessions become inaccessible until you restart it. Session data is preserved but can't be accessed while stopped.
+</Warning>
+
+## Mobile Experience
+
+On mobile devices:
+
+- Instances display in a single column
+- Cards are touch-optimized for easy selection
+- Full path is visible but wraps if needed
+- Status indicators are prominent
+- Empty state is mobile-friendly
+
+## Performance Considerations
+
+- Fetching instances is fast (single API call)
+- Instance list auto-updates on navigation
+- Minimal overhead per instance
+- Scales well to dozens of instances
+
+<Info>
+  The instances page automatically refreshes when you navigate to it, ensuring you always see the latest running instances.
+</Info>
+
+## Best Practices
+
+### Naming Projects
+
+Give your project directories meaningful names:
+
+- ✅ `customer-dashboard`
+- ✅ `api-service`  
+- ❌ `project1`
+- ❌ `test`
+
+### Organizing Instances
+
+Keep your instances organized:
+
+- Stop instances you're not actively using
+- Use consistent port ranges per project type
+- Document which ports are used for what
+
+### Resource Management
+
+Each instance uses system resources:
+
+- Monitor memory usage with multiple instances
+- Stop unused instances to free resources
+- Consider running only 2-3 instances simultaneously

@@ -1,0 +1,193 @@
+---
+title: Git Integration
+description: View and track Git changes with the built-in diff viewer
+icon: git-branch
+---
+
+OpenCode Portal includes a powerful Git integration that lets you view file changes in real-time as the AI agent works on your codebase.
+
+## Accessing Git Diff
+
+The Git diff viewer is available from the sidebar:
+
+1. Click the **Diff** button in the left sidebar
+2. The diff view opens showing all uncommitted changes in your workspace
+
+<Tip>
+  A badge on the Diff button shows the number of changed files, giving you at-a-glance visibility into modifications.
+</Tip>
+
+## Diff Viewer Interface
+
+### Header
+
+The top of the diff view shows:
+
+- **Page title**: "Git Diff"
+- **Refresh button**: Manually reload changes at any time
+
+### File List
+
+All changed files are displayed in a scrollable list. Each file shows:
+
+- File name and path
+- Addition and deletion indicators
+- Full unified diff view
+
+## Reading Diffs
+
+The diff viewer uses a unified diff format with visual enhancements:
+
+### Diff Indicators
+
+Changes are shown with bar indicators on the side:
+
+- **Green bars** - Added lines
+- **Red bars** - Removed lines  
+- **Yellow bars** - Modified sections
+
+### Diff Styles
+
+<Tabs>
+  <Tab title="Unified View">
+    All changes are shown in a single column with:
+    - `-` prefix for deletions in red
+    - `+` prefix for additions in green
+    - Context lines in standard text color
+  </Tab>
+  <Tab title="Color Coding">
+    - **Green background** - New lines
+    - **Red background** - Deleted lines
+    - **No background** - Unchanged context lines
+  </Tab>
+</Tabs>
+
+## File Change Details
+
+For each modified file, you can see:
+
+- **File path** - Full path from repository root
+- **Change type** - Modified, added, or deleted
+- **Line numbers** - Both old and new line numbers
+- **Change hunks** - Grouped sections of related changes
+
+<Info>
+  The diff viewer automatically parses standard Git patch format, so it works seamlessly with your existing Git workflow.
+</Info>
+
+## Real-Time Updates
+
+The diff view integrates with your active workspace:
+
+### Auto-Detection
+
+Changes are automatically detected when:
+
+- The AI agent modifies files
+- You manually edit files in your project
+- External tools make changes
+
+### Manual Refresh
+
+You can force a refresh at any time:
+
+1. Click the **Refresh** button in the header
+2. The diff re-fetches all changes from Git
+3. The file count badge updates accordingly
+
+## Empty State
+
+When there are no changes to display:
+
+- A message shows **"No changes detected"**
+- A **Refresh** button is available to check again
+- The empty state is centered for clarity
+
+<Tip>
+  This is what you'll see after committing all changes or when working with a clean repository.
+</Tip>
+
+## Error Handling
+
+If the diff viewer encounters issues:
+
+<AccordionGroup>
+  <Accordion title="Loading Errors">
+    - Error message displays in red
+    - Includes the specific error reason
+    - **Retry** button to attempt loading again
+  </Accordion>
+  
+  <Accordion title="Parsing Errors">
+    - Invalid diff formats are gracefully handled
+    - Falls back to empty state if parsing fails
+    - No crashes or broken UI
+  </Accordion>
+  
+  <Accordion title="Git Not Available">
+    - Clear message if Git is not initialized
+    - Instructions for initializing Git in your project
+  </Accordion>
+</AccordionGroup>
+
+## Common Use Cases
+
+### Reviewing AI Changes
+
+After asking the AI to modify your code:
+
+1. Navigate to the Diff view
+2. Review all changed files
+3. Verify the changes match your expectations
+4. Commit changes if satisfied
+
+### Tracking Work Progress
+
+Use the file count badge to:
+
+- Monitor how many files the AI has modified
+- Gauge the scope of changes before reviewing
+- Know when the AI has completed a task
+
+### Before Committing
+
+Always review diffs before committing:
+
+1. Open the Diff view
+2. Check each changed file
+3. Look for unexpected modifications
+4. Return to the chat to ask for adjustments if needed
+
+<Warning>
+  The diff viewer shows **uncommitted changes only**. Once you commit, the diff view will be empty until new changes are made.
+</Warning>
+
+## Keyboard Navigation
+
+The diff viewer supports scrolling:
+
+- **Mouse wheel** - Scroll through files
+- **Touch gestures** - Swipe to scroll on mobile
+- **Page Up/Down** - Quick navigation on desktop
+
+## Mobile Experience
+
+On mobile devices, the diff viewer adapts:
+
+- Full-width display for maximum readability
+- Touch-optimized refresh button
+- Smooth scrolling through long diffs
+- Horizontal scrolling for long lines
+
+## Performance
+
+The diff viewer is optimized for large changesets:
+
+- Efficiently parses multi-file diffs
+- Smooth scrolling even with hundreds of changes
+- Lazy rendering for very large files
+- Minimal memory footprint
+
+<Info>
+  Diff data is cached and only refetched when you click Refresh or when significant changes are detected.
+</Info>

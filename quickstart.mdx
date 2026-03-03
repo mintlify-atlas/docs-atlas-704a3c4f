@@ -1,80 +1,299 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get OpenCode Portal running in under 5 minutes
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you begin, make sure you have the following installed:
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Install Bun">
+    Portal works best with Bun. Node.js may have rough edges.
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    # macOS and Linux
+    curl -fsSL https://bun.sh/install | bash
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    # Windows
+    powershell -c "irm bun.sh/install.ps1|iex"
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    Verify installation:
+    ```bash
+    bun --version
+    ```
+  </Step>
+  
+  <Step title="Install OpenCode">
+    Portal requires a running OpenCode server to connect to.
+    
+    ```bash
+    # Using Bun (recommended)
+    bun install -g opencode
+    
+    # Using Homebrew (macOS)
+    brew install sst/tap/opencode
+    ```
+    
+    Verify installation:
+    ```bash
+    opencode --version
+    ```
+  </Step>
+</Steps>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+## Quick start with bunx
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+The fastest way to run Portal is using `bunx` - no installation required.
 
-### Step 3: Go live
+<Steps>
+  <Step title="Navigate to your project">
+    Open your terminal and navigate to the project directory where you want to use OpenCode.
+    
+    ```bash
+    cd /path/to/your/project
+    ```
+  </Step>
+  
+  <Step title="Run Portal">
+    Start Portal with a single command:
+    
+    ```bash
+    bunx openportal
+    ```
+    
+    This will:
+    - Start the OpenCode server (default port: 4000)
+    - Start the Portal web UI (default port: 3000)
+    - Automatically find available ports if defaults are busy
+    - Open your browser to `http://localhost:3000`
+    
+    <Note>
+      The first run may take a moment as Bun downloads and caches the Portal package.
+    </Note>
+  </Step>
+  
+  <Step title="Select your instance">
+    When Portal loads, you'll see the instance selector. Click on your running instance to connect.
+    
+    If you see "No instances found", make sure OpenCode started successfully. Check the terminal output for errors.
+  </Step>
+  
+  <Step title="Create your first session">
+    Once connected:
+    
+    1. Click the **+** button in the sidebar to create a new session
+    2. Type your message in the chat input (e.g., "Show me the project structure")
+    3. Press **Send** or hit Enter
+    4. Watch as OpenCode responds with AI-powered assistance
+    
+    You can mention files using `@` - just type `@` followed by a filename and select from the autocomplete popup.
+  </Step>
+</Steps>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<Warning>
+  Portal binds to `0.0.0.0` by default, making it accessible on your local network. For production deployments, use a VPN like Tailscale or configure proper authentication.
+</Warning>
+
+## Installation (global)
+
+For regular use, install Portal globally:
+
+```bash
+bun install -g openportal
+```
+
+Now you can run it from any directory:
+
+```bash
+cd ~/my-project
+openportal
+```
+
+## CLI commands
+
+Portal includes several commands for managing instances:
+
+### Start OpenCode + Portal
+
+```bash
+openportal
+```
+
+Starts both the OpenCode server and Portal web UI.
+
+### Start only OpenCode server
+
+```bash
+openportal run
+```
+
+Starts just the OpenCode server without the web UI. Useful if you're running Portal separately or using the official OpenCode UI.
+
+### List running instances
+
+```bash
+openportal list
+# or
+openportal ls
+```
+
+Shows all active OpenCode instances with their ports, directories, and PIDs.
+
+### Stop instances
+
+```bash
+openportal stop
+```
+
+Interactively select instances to stop.
+
+### Clean up stale entries
+
+```bash
+openportal clean
+```
+
+Removes instance entries for processes that are no longer running.
+
+## CLI options
+
+Customize Portal's behavior with command-line options:
+
+```bash
+openportal [command] [options]
+```
+
+| Option | Description | Default |
+|--------|-------------|----------|
+| `-h, --help` | Show help message | - |
+| `-d, --directory <path>` | Working directory | Current directory |
+| `-p, --port <port>` | Portal web UI port | 3000 (auto-finds if busy) |
+| `--opencode-port <port>` | OpenCode server port | 4000 (auto-finds if busy) |
+| `--hostname <host>` | Hostname to bind | 0.0.0.0 |
+| `--name <name>` | Instance name | Directory name |
+| `--docker` | Run OpenCode in Docker | false |
+
+### Examples
+
+```bash
+# Start Portal on a custom port
+openportal --port 8080
+
+# Start OpenCode in a specific directory
+openportal run -d ~/projects/my-app
+
+# Run OpenCode in Docker (requires Docker installed)
+openportal --docker
+
+# Combine multiple options
+openportal -d ~/work/api --port 5000 --name api-project
+```
+
+## Docker mode
+
+Run OpenCode in a Docker container for isolated environments:
+
+```bash
+openportal --docker
+```
+
+This requires Docker to be installed and running. Portal will:
+- Pull the OpenCode Docker image (if not cached)
+- Mount your project directory into the container
+- Start OpenCode inside the container
+- Connect Portal to the containerized instance
+
+You can customize the Docker image:
+
+```bash
+OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:latest openportal --docker
+```
+
+## Using Portal features
+
+### Chatting with OpenCode
+
+The chat interface supports rich interactions:
+
+- **Text messages**: Ask questions, request code changes, or give instructions
+- **File mentions**: Use `@filename` to reference files (autocomplete available)
+- **Multi-line input**: Shift+Enter for new lines, Enter to send
+- **Tool visibility**: See when OpenCode reads, writes, or edits files
+
+### Viewing git diffs
+
+Click the **Diff** icon in the sidebar to see all uncommitted changes:
+
+- Unified diff view with syntax highlighting
+- File-by-file breakdown
+- Line-level additions and deletions
+- Refresh button to update changes
+
+### Switching models
+
+Click the model selector in the chat header to choose from available AI models. Portal displays all configured providers and their models.
+
+### Managing instances
+
+Click the instance name in the sidebar to view and switch between running instances. Each instance shows:
+- Project name and directory
+- Port number
+- Running status indicator
+
+## Troubleshooting
+
+### Port already in use
+
+Portal automatically finds available ports if defaults are busy. To manually specify:
+
+```bash
+openportal --port 8080 --opencode-port 4001
+```
+
+### "No instances found"
+
+This means the OpenCode server didn't start. Check:
+
+1. OpenCode is installed: `opencode --version`
+2. No permission errors in terminal output
+3. The directory is accessible and not restricted
+
+### Connection errors
+
+If Portal can't connect to OpenCode:
+
+1. Verify OpenCode is running: `openportal list`
+2. Check firewall settings aren't blocking ports
+3. Try restarting: `openportal stop` then `openportal`
+
+### Bun vs Node.js issues
+
+Portal is optimized for Bun. If using Node.js, you may encounter:
+
+- Slower startup times
+- Module resolution issues
+- Missing dependencies
+
+Switch to Bun for the best experience.
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Session management" icon="messages">
+    Learn how to create, organize, and delete sessions
+  </Card>
+  
+  <Card title="Remote access" icon="globe">
+    Set up secure remote access via Tailscale or VPN
+  </Card>
+  
+  <Card title="Configuration" icon="cog">
+    Customize Portal settings and preferences
+  </Card>
+  
+  <Card title="Deployment" icon="rocket">
+    Deploy Portal to a VPS for always-on access
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

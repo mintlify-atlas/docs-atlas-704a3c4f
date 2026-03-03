@@ -1,0 +1,119 @@
+---
+title: API Overview
+description: Introduction to the OpenCode Portal HTTP API
+---
+
+## Introduction
+
+The OpenCode Portal HTTP API provides programmatic access to manage OpenCode instances, sessions, and project operations. The API is organized around REST principles with predictable resource-oriented URLs.
+
+## Base URL
+
+All API requests are made to:
+
+```
+http://localhost:<portal-port>/api
+```
+
+The default portal port is typically `3000`, but this may vary depending on your configuration.
+
+## Authentication
+
+The OpenCode Portal API currently does not require authentication for local instances. All endpoints are accessible without API keys or tokens.
+
+<Warning>
+  This API is designed for local development environments. If you expose the Portal to a network, ensure proper security measures are in place.
+</Warning>
+
+## Port Parameter
+
+Many endpoints include a `:port` parameter in the URL path. This refers to the OpenCode instance port number, not the Portal port. Each OpenCode instance runs on its own port (typically starting at 3100).
+
+## Request Format
+
+The API accepts JSON-encoded request bodies for POST requests. Include the following header:
+
+```
+Content-Type: application/json
+```
+
+## Response Format
+
+All responses are returned as JSON with the following structure:
+
+**Success Response (200-299)**
+```json
+{
+  // Response data varies by endpoint
+}
+```
+
+**Error Response (400-599)**
+```json
+{
+  "statusCode": 400,
+  "statusMessage": "Error description",
+  "message": "Detailed error message"
+}
+```
+
+## Error Codes
+
+The API uses standard HTTP status codes:
+
+| Code | Description |
+|------|-------------|
+| 200  | Success |
+| 400  | Bad Request - Invalid parameters |
+| 404  | Not Found - Resource doesn't exist |
+| 500  | Internal Server Error |
+
+## Common Errors
+
+### Invalid Port
+
+```json
+{
+  "statusCode": 500,
+  "message": "Invalid port"
+}
+```
+
+Returned when the `:port` parameter is missing or not a valid number.
+
+### Session ID Required
+
+```json
+{
+  "statusCode": 500,
+  "message": "Session ID required"
+}
+```
+
+Returned when a session ID is required but not provided.
+
+### Message Text Required
+
+```json
+{
+  "statusCode": 500,
+  "message": "Message text required"
+}
+```
+
+Returned when sending a prompt without message text.
+
+## Example Request
+
+```bash
+curl -X GET http://localhost:3000/api/instances
+```
+
+## API Endpoints
+
+The API is organized into the following resource groups:
+
+- [Sessions](/api/sessions) - Manage chat sessions
+- [Git](/api/git) - Git operations
+- [Files](/api/files) - File search and operations
+- [Instances](/api/instances) - OpenCode instance management

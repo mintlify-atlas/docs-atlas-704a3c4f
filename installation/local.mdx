@@ -1,0 +1,297 @@
+---
+title: Local Installation
+description: Install and run OpenCode Portal on your local machine
+---
+
+OpenCode Portal provides a mobile-first web UI for OpenCode. This guide covers local installation and setup.
+
+## Prerequisites
+
+Before installing OpenCode Portal, you need to have OpenCode installed on your system.
+
+<Steps>
+  <Step title="Install OpenCode">
+    Install OpenCode using one of the following methods:
+
+    <CodeGroup>
+      ```bash Bun
+      bun install -g opencode
+      ```
+
+      ```bash Homebrew (macOS)
+      brew install sst/tap/opencode
+      ```
+    </CodeGroup>
+  </Step>
+
+  <Step title="Install OpenPortal">
+    You can either install OpenPortal globally or run it directly with `bunx`.
+
+    ### Global Installation
+
+    <CodeGroup>
+      ```bash Bun (Recommended)
+      bun install -g openportal
+      ```
+
+      ```bash npm
+      npm install -g openportal
+      ```
+
+      ```bash pnpm
+      pnpm add -g openportal
+      ```
+
+      ```bash yarn
+      yarn global add openportal
+      ```
+    </CodeGroup>
+
+    <Note>
+      OpenPortal works best when paired with Bun. Node.js may have some rough edges.
+    </Note>
+
+    ### Run Without Installing
+
+    Alternatively, use `bunx` to run OpenPortal without installing:
+
+    ```bash
+    bunx openportal
+    ```
+  </Step>
+
+  <Step title="Start OpenPortal">
+    Navigate to your project directory and start OpenPortal:
+
+    ```bash
+    cd /path/to/your/project
+    openportal
+    ```
+
+    This will:
+    - Start the OpenCode server (default port: 4000)
+    - Start the web UI (default port: 3000)
+    - Automatically find available ports if defaults are busy
+
+    You should see output like:
+
+    ```
+    Starting OpenPortal...
+      Name: your-project
+      Directory: /path/to/your/project
+      Web UI Port: 3000
+      OpenCode Port: 4000
+      Hostname: 0.0.0.0
+      Mode: Process
+
+    ✅ OpenPortal started!
+       OpenCode PID: 12345
+       Web UI PID: 12346
+
+    📱 Access OpenPortal at http://localhost:3000
+    🔧 OpenCode API at http://localhost:4000
+    ```
+  </Step>
+
+  <Step title="Access the Web UI">
+    Open your browser and navigate to:
+
+    ```
+    http://localhost:3000
+    ```
+
+    You can now interact with OpenCode through the web interface.
+  </Step>
+</Steps>
+
+## CLI Commands
+
+OpenPortal provides several commands for managing instances:
+
+### Start OpenCode + Web UI
+
+```bash
+openportal
+```
+
+Starts both the OpenCode server and the web UI.
+
+### Start OpenCode Server Only
+
+```bash
+openportal run
+```
+
+Starts only the OpenCode server without the web UI.
+
+### Stop Running Instances
+
+```bash
+openportal stop
+```
+
+Stops all running OpenPortal instances in the current directory.
+
+### List Running Instances
+
+```bash
+openportal list
+# or
+openportal ls
+```
+
+Displays all running OpenPortal instances with their status.
+
+### Clean Stale Entries
+
+```bash
+openportal clean
+```
+
+Removes stale configuration entries for stopped instances.
+
+## CLI Options
+
+Customize OpenPortal behavior with these options:
+
+### Directory Options
+
+```bash
+# Specify working directory
+openportal -d /path/to/project
+openportal --directory /path/to/project
+
+# Or pass directory as argument
+openportal /path/to/project
+```
+
+### Port Configuration
+
+```bash
+# Custom Web UI port
+openportal -p 8080
+openportal --port 8080
+
+# Custom OpenCode server port
+openportal --opencode-port 5000
+```
+
+<Note>
+  If the specified ports are busy, OpenPortal will automatically find available ports.
+</Note>
+
+### Network Configuration
+
+```bash
+# Bind to specific hostname
+openportal --hostname 127.0.0.1
+
+# Default is 0.0.0.0 (all interfaces)
+```
+
+### Instance Naming
+
+```bash
+# Set custom instance name
+openportal --name my-instance
+
+# Default is the directory name
+```
+
+### Help
+
+```bash
+openportal -h
+openportal --help
+```
+
+## Usage Examples
+
+### Basic Usage
+
+```bash
+# Start in current directory
+openportal
+
+# Start in specific directory
+openportal /path/to/my-project
+```
+
+### Custom Ports
+
+```bash
+# Use custom web UI port
+openportal --port 8080
+
+# Use both custom ports
+openportal --port 8080 --opencode-port 5000
+```
+
+### Server Only Mode
+
+```bash
+# Start only OpenCode server
+openportal run
+
+# Server only with custom port
+openportal run --opencode-port 5000
+
+# Server only in specific directory
+openportal run -d ./my-project
+```
+
+### Instance Management
+
+```bash
+# List all running instances
+openportal list
+
+# Stop instance in current directory
+openportal stop
+
+# Stop specific instance by name
+openportal stop --name my-instance
+
+# Clean up stale entries
+openportal clean
+```
+
+## Troubleshooting
+
+### Port Already in Use
+
+If the default ports are already in use, OpenPortal will automatically find available ports. You can also specify custom ports:
+
+```bash
+openportal --port 8080 --opencode-port 5000
+```
+
+### OpenCode Not Found
+
+If you see an error about OpenCode not being found, ensure it's installed globally:
+
+```bash
+# Check if OpenCode is installed
+which opencode
+
+# Install if missing
+bun install -g opencode
+```
+
+### Instance Already Running
+
+If OpenPortal detects an instance already running for the directory, it will display the existing instance information instead of starting a new one.
+
+To stop the existing instance:
+
+```bash
+openportal stop
+```
+
+### Web Server Not Found
+
+If you installed OpenPortal globally and see "Web server not found" errors, try reinstalling:
+
+```bash
+bun install -g openportal
+```

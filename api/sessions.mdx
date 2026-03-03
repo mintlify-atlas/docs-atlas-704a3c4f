@@ -1,0 +1,416 @@
+---
+title: Sessions API
+description: Manage OpenCode chat sessions
+---
+
+## Overview
+
+The Sessions API allows you to create, list, retrieve, and delete chat sessions, as well as send messages and retrieve conversation history.
+
+## List Sessions
+
+Retrieve all sessions for an OpenCode instance.
+
+```http
+GET /api/opencode/:port/sessions
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of session objects
+  
+  <Expandable title="Session object">
+    <ResponseField name="id" type="string">
+      Unique session identifier
+    </ResponseField>
+    
+    <ResponseField name="title" type="string">
+      Session title
+    </ResponseField>
+    
+    <ResponseField name="parentID" type="string" optional>
+      Parent session ID if this is a forked session
+    </ResponseField>
+    
+    <ResponseField name="createdAt" type="string">
+      ISO 8601 timestamp of session creation
+    </ResponseField>
+    
+    <ResponseField name="updatedAt" type="string">
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/sessions
+```
+
+```json Response
+[
+  {
+    "id": "sess_abc123",
+    "title": "Debug API endpoints",
+    "createdAt": "2026-03-03T10:00:00.000Z",
+    "updatedAt": "2026-03-03T10:30:00.000Z"
+  },
+  {
+    "id": "sess_def456",
+    "title": "Implement authentication",
+    "parentID": "sess_abc123",
+    "createdAt": "2026-03-03T11:00:00.000Z",
+    "updatedAt": "2026-03-03T11:15:00.000Z"
+  }
+]
+```
+
+---
+
+## Create Session
+
+Create a new chat session.
+
+```http
+POST /api/opencode/:port/session/create
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+### Request Body
+
+<ParamField body="title" type="string" optional>
+  Session title (defaults to auto-generated title)
+</ParamField>
+
+<ParamField body="parentID" type="string" optional>
+  Parent session ID to fork from
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique session identifier
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Session title
+</ResponseField>
+
+<ResponseField name="parentID" type="string" optional>
+  Parent session ID if forked
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://localhost:3000/api/opencode/3100/session/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "New feature development"
+  }'
+```
+
+```json Response
+{
+  "id": "sess_xyz789",
+  "title": "New feature development",
+  "createdAt": "2026-03-03T12:00:00.000Z",
+  "updatedAt": "2026-03-03T12:00:00.000Z"
+}
+```
+
+---
+
+## Get Session
+
+Retrieve a specific session by ID.
+
+```http
+GET /api/opencode/:port/session/:id
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The session ID
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string">
+  Unique session identifier
+</ResponseField>
+
+<ResponseField name="title" type="string">
+  Session title
+</ResponseField>
+
+<ResponseField name="parentID" type="string" optional>
+  Parent session ID if forked
+</ResponseField>
+
+<ResponseField name="createdAt" type="string">
+  ISO 8601 timestamp
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string">
+  ISO 8601 timestamp
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/session/sess_abc123
+```
+
+```json Response
+{
+  "id": "sess_abc123",
+  "title": "Debug API endpoints",
+  "createdAt": "2026-03-03T10:00:00.000Z",
+  "updatedAt": "2026-03-03T10:30:00.000Z"
+}
+```
+
+---
+
+## Delete Session
+
+Delete a session permanently.
+
+```http
+DELETE /api/opencode/:port/session/:id
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The session ID to delete
+</ParamField>
+
+### Response
+
+<ResponseField name="success" type="boolean">
+  Indicates if deletion was successful
+</ResponseField>
+
+### Example
+
+```bash
+curl -X DELETE http://localhost:3000/api/opencode/3100/session/sess_abc123
+```
+
+```json Response
+{
+  "success": true
+}
+```
+
+---
+
+## Get Session Messages
+
+Retrieve all messages in a session.
+
+```http
+GET /api/opencode/:port/session/:id/messages
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The session ID
+</ParamField>
+
+### Response
+
+<ResponseField name="messages" type="array">
+  Array of message objects
+  
+  <Expandable title="Message object">
+    <ResponseField name="id" type="string">
+      Unique message identifier
+    </ResponseField>
+    
+    <ResponseField name="role" type="string">
+      Message role: `user` or `assistant`
+    </ResponseField>
+    
+    <ResponseField name="content" type="string">
+      Message content
+    </ResponseField>
+    
+    <ResponseField name="timestamp" type="string">
+      ISO 8601 timestamp
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/session/sess_abc123/messages
+```
+
+```json Response
+{
+  "messages": [
+    {
+      "id": "msg_001",
+      "role": "user",
+      "content": "Help me debug this API endpoint",
+      "timestamp": "2026-03-03T10:00:00.000Z"
+    },
+    {
+      "id": "msg_002",
+      "role": "assistant",
+      "content": "I'll help you debug that. Can you share the endpoint code?",
+      "timestamp": "2026-03-03T10:00:05.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## Send Prompt
+
+Send a message to a session and get an AI response.
+
+```http
+POST /api/opencode/:port/session/:id/prompt
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The session ID
+</ParamField>
+
+### Request Body
+
+<ParamField body="text" type="string" required>
+  The message text to send
+</ParamField>
+
+<ParamField body="model" type="object" optional>
+  Model configuration
+  
+  <Expandable title="Model object">
+    <ParamField body="providerID" type="string" required>
+      AI provider ID (e.g., "anthropic", "openai")
+    </ParamField>
+    
+    <ParamField body="modelID" type="string" required>
+      Model ID (e.g., "claude-4.5-sonnet", "gpt-4")
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="agent" type="string" optional>
+  Agent name to use for this prompt
+</ParamField>
+
+### Response
+
+<ResponseField name="messageId" type="string">
+  ID of the created message
+</ResponseField>
+
+<ResponseField name="response" type="string">
+  AI-generated response
+</ResponseField>
+
+### Example
+
+```bash
+curl -X POST http://localhost:3000/api/opencode/3100/session/sess_abc123/prompt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "Write a function to validate email addresses",
+    "model": {
+      "providerID": "anthropic",
+      "modelID": "claude-4.5-sonnet"
+    }
+  }'
+```
+
+```json Response
+{
+  "messageId": "msg_003",
+  "response": "I'll create an email validation function for you..."
+}
+```
+
+---
+
+## Error Responses
+
+### Session Not Found
+
+```json
+{
+  "statusCode": 404,
+  "message": "Session not found"
+}
+```
+
+### Invalid Port
+
+```json
+{
+  "statusCode": 500,
+  "message": "Invalid port"
+}
+```
+
+### Session ID Required
+
+```json
+{
+  "statusCode": 500,
+  "message": "Session ID required"
+}
+```
+
+### Message Text Required
+
+```json
+{
+  "statusCode": 500,
+  "message": "Message text required"
+}
+```

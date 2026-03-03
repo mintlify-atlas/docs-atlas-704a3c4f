@@ -1,0 +1,287 @@
+---
+title: File Mention Support
+description: Reference files in your messages using @ mentions
+icon: at-sign
+---
+
+File mentions allow you to quickly reference files in your project when chatting with AI agents. Simply type `@` followed by a filename to search and insert file paths.
+
+## Using File Mentions
+
+### Triggering the Mention Menu
+
+To start a file mention:
+
+1. Type `@` in the message input
+2. Start typing a filename or path
+3. A popover appears with matching files
+
+<Info>
+  The `@` must be preceded by a space or newline (or be at the start of your message) to trigger file search.
+</Info>
+
+### Searching for Files
+
+As you type after `@`, the search automatically:
+
+- Searches your entire project
+- Filters results in real-time (150ms debounce)
+- Shows up to 10 matching files
+- Highlights the best matches first
+
+<Tip>
+  You can search by filename, partial path, or file extension. For example, `@component` will find `UserComponent.tsx`, `components/Header.tsx`, etc.
+</Tip>
+
+## File Mention Popover
+
+### Popover Appearance
+
+The file mention popover displays:
+
+- **Header** - Shows your search query or "Searching..."
+- **File list** - Up to 10 results with icons and paths
+- **File details** - Name and full path for each result
+- **Selection highlight** - The currently selected file is visually highlighted
+
+### Desktop vs Mobile
+
+<Tabs>
+  <Tab title="Desktop">
+    - Appears **above** your cursor position
+    - Minimum width of 288px (18rem)
+    - Positions intelligently to stay on screen
+    - Hover over files to preview selection
+  </Tab>
+  <Tab title="Mobile">
+    - Appears **below** the input field
+    - Full width with margins on sides
+    - Touch-optimized for easy selection
+    - Adapts for keyboard presence
+  </Tab>
+</Tabs>
+
+## Selecting Files
+
+### Keyboard Navigation
+
+<Steps>
+  <Step title="Arrow Down">
+    Move selection to the next file in the list
+  </Step>
+  <Step title="Arrow Up"> 
+    Move selection to the previous file
+  </Step>
+  <Step title="Enter or Tab">
+    Insert the selected file path and close the popover
+  </Step>
+  <Step title="Escape">
+    Close the popover without inserting anything
+  </Step>
+</Steps>
+
+### Mouse/Touch Selection
+
+- **Desktop**: Click any file to insert it
+- **Mobile**: Tap any file to insert it
+- **Hover** (desktop only): Highlights the file under your mouse
+
+<Tip>
+  Selected files automatically scroll into view as you navigate with arrow keys.
+</Tip>
+
+## File Path Insertion
+
+When you select a file:
+
+1. The `@` and your partial search are removed
+2. The full file path is inserted as `@path/to/file.ext`
+3. A space is added after the path
+4. The popover closes
+5. Focus returns to the input field
+
+### Example Flow
+
+```
+You type:     Please review @user
+Popover shows: UserComponent.tsx, UserProfile.tsx, etc.
+You select:   UserComponent.tsx  
+Result:       Please review @src/components/UserComponent.tsx █
+```
+
+## Search Behavior
+
+### What Triggers Search
+
+The file search activates when:
+
+- `@` is typed after a space or newline
+- `@` is at the beginning of your message  
+- You continue typing after a valid `@` trigger
+
+### What Stops Search
+
+The popover closes when:
+
+- You select a file (Enter, Tab, or click)
+- You press Escape
+- You click/tap outside the popover
+- You type a space or newline after `@`
+- You delete the `@` character
+
+<Warning>
+  If you type `@filename` without spaces, the popover will work. But `email@example.com` won't trigger it because `@` isn't preceded by whitespace.
+</Warning>
+
+## Visual Indicators
+
+### File Icons
+
+Each file in the list shows:
+
+- **Document icon** - Standard file indicator
+- **Color coding** - Primary color for selected, muted for others
+- **Background highlight** - Selected file has primary background
+
+### Loading State
+
+While searching:
+
+- Header shows **"Searching..."**
+- Previous results remain visible
+- New results replace old ones when ready
+
+### Empty State  
+
+If no files match:
+
+- Message shows **"No files found"**
+- Popover remains open
+- You can continue typing to refine search
+
+## Positioning Intelligence
+
+### Cursor Tracking
+
+The popover positions itself based on:
+
+- Current cursor position in the textarea
+- Available screen space above/below cursor
+- Viewport width and height
+- Mobile keyboard presence
+
+### Mobile Keyboard Handling
+
+On mobile devices:
+
+- Detects keyboard height (typically 40% of viewport)
+- Positions popover to avoid keyboard overlap
+- Switches to above/below input as needed
+- Clamps position to stay within screen bounds
+
+<Info>
+  The positioning algorithm recalculates on every keystroke to ensure the popover stays visible as you type and move the cursor.
+</Info>
+
+## Performance Optimizations
+
+### Debouncing
+
+File searches are debounced by **150ms** to:
+
+- Reduce server load
+- Avoid flickering results
+- Improve perceived performance
+- Wait for typing pauses
+
+### Request Cancellation
+
+When you type quickly:
+
+- Previous search requests are cancelled
+- Only the latest search completes
+- No duplicate or stale results
+
+### Result Limiting
+
+Only the top 10 results are shown to:
+
+- Keep the UI clean and scannable
+- Reduce rendering overhead  
+- Encourage more specific searches
+
+## Common Use Cases
+
+### Asking for Code Reviews
+
+```
+Can you review @src/components/UserProfile.tsx and suggest improvements?
+```
+
+### Requesting Changes
+
+```
+Please update @config/api.ts to use the new endpoint URL
+```
+
+### Comparing Files
+
+```
+What's the difference between @models/User.ts and @models/UserProfile.ts?
+```
+
+### Explaining Code
+
+```
+Explain how @utils/validation.ts works
+```
+
+<Tip>
+  You can mention multiple files in one message! Each `@` mention works independently.
+</Tip>
+
+## Accessibility
+
+### Keyboard Only
+
+File mentions are fully keyboard accessible:
+
+- `@` triggers the search
+- Arrow keys navigate results  
+- Enter/Tab selects files
+- Escape cancels
+- No mouse required
+
+### Screen Readers
+
+The popover includes:
+
+- Proper ARIA labels
+- Announced search status
+- Clear selection feedback
+- Semantic HTML structure
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Popover Not Appearing">
+    Make sure:
+    - `@` is preceded by a space, newline, or is at the start
+    - You're connected to an instance
+    - Your instance has file search enabled
+  </Accordion>
+  
+  <Accordion title="No Results Found">
+    Try:
+    - Typing more of the filename
+    - Using just the file extension (e.g., `@.tsx`)
+    - Checking if the file exists in your project
+    - Refreshing your instance connection
+  </Accordion>
+  
+  <Accordion title="Wrong File Inserted">
+    - Use arrow keys to select the correct file before pressing Enter
+    - Type more characters to narrow the search
+    - Use partial paths to disambiguate (e.g., `@components/User`)
+  </Accordion>
+</AccordionGroup>

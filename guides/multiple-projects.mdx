@@ -1,0 +1,619 @@
+---
+title: Managing Multiple Projects
+description: Run and manage multiple OpenCode Portal instances for different projects
+---
+
+## Overview
+
+OpenCode Portal supports running multiple instances simultaneously, allowing you to work on different projects without conflicts. Each instance can have its own:
+
+- Dedicated ports (Web UI and OpenCode server)
+- Separate sessions and chat history
+- Independent working directory
+- Custom instance name
+
+## Why Multiple Instances?
+
+<CardGroup cols={2}>
+  <Card title="Project Isolation" icon="folder-tree">
+    Keep different codebases completely separate with their own AI context and sessions.
+  </Card>
+  
+  <Card title="Client Work" icon="briefcase">
+    Maintain distinct instances for different clients, preventing context mixing.
+  </Card>
+  
+  <Card title="Environment Separation" icon="layer-group">
+    Run separate instances for development, staging, and production environments.
+  </Card>
+  
+  <Card title="Team Collaboration" icon="users">
+    Share different instances with different team members based on project access.
+  </Card>
+</CardGroup>
+
+## Basic Multi-Instance Usage
+
+### Starting Multiple Instances
+
+The simplest way to run multiple instances is to use different directories:
+
+```bash
+# Terminal 1: Start first project
+cd ~/projects/website
+openportal
+# Web UI: http://localhost:3000
+# OpenCode: http://localhost:4000
+
+# Terminal 2: Start second project
+cd ~/projects/api
+openportal
+# Ports auto-increment if defaults are busy:
+# Web UI: http://localhost:3001
+# OpenCode: http://localhost:4001
+```
+
+<Info>
+  OpenCode Portal automatically finds available ports if the defaults (3000 and 4000) are already in use.
+</Info>
+
+### Using Custom Names
+
+Give each instance a memorable name:
+
+```bash
+# Project 1: Frontend
+cd ~/projects/website
+openportal --name "website-frontend"
+
+# Project 2: Backend API
+cd ~/projects/api
+openportal --name "api-backend"
+
+# Project 3: Mobile App
+cd ~/projects/mobile
+openportal --name "mobile-app"
+```
+
+Names help you identify instances when listing them:
+
+```bash
+openportal list
+```
+
+Output:
+```
+Running OpenCode Portal instances:
+
+┌───────────────────┬──────────────────────┬─────────┬───────────────┬─────────┐
+│ Name              │ Directory            │ Web UI  │ OpenCode Port │ PID     │
+├───────────────────┼──────────────────────┼─────────┼───────────────┼─────────┤
+│ website-frontend  │ /home/user/projects/ │ 3000    │ 4000          │ 12345   │
+│                   │ website              │         │               │         │
+├───────────────────┼──────────────────────┼─────────┼───────────────┼─────────┤
+│ api-backend       │ /home/user/projects/ │ 3001    │ 4001          │ 12346   │
+│                   │ api                  │         │               │         │
+├───────────────────┼──────────────────────┼─────────┼───────────────┼─────────┤
+│ mobile-app        │ /home/user/projects/ │ 3002    │ 4002          │ 12347   │
+│                   │ mobile              │         │               │         │
+└───────────────────┴──────────────────────┴─────────┴───────────────┴─────────┘
+```
+
+## Advanced Configuration
+
+### Specifying Exact Ports
+
+For consistent access (especially useful for bookmarks and remote access), specify exact ports:
+
+```bash
+# Frontend on specific ports
+openportal \
+  --name "frontend" \
+  --port 3000 \
+  --opencode-port 4000 \
+  --directory ~/projects/website
+
+# Backend on different ports
+openportal \
+  --name "backend" \
+  --port 3100 \
+  --opencode-port 4100 \
+  --directory ~/projects/api
+
+# Mobile on yet different ports
+openportal \
+  --name "mobile" \
+  --port 3200 \
+  --opencode-port 4200 \
+  --directory ~/projects/mobile
+```
+
+<Warning>
+  If you specify a port that's already in use, Portal will fail to start. Use `openportal list` to see which ports are currently occupied.
+</Warning>
+
+### Port Organization Strategy
+
+Organize ports systematically for easier management:
+
+```
+Project Type       | Web UI Port | OpenCode Port
+-------------------|-------------|---------------
+Frontend projects  | 3000-3099   | 4000-4099
+Backend projects   | 3100-3199   | 4100-4199
+Mobile projects    | 3200-3299   | 4200-4299
+DevOps/Infra       | 3300-3399   | 4300-4399
+```
+
+### Running from Different Directories
+
+You can start Portal from anywhere and specify the project directory:
+
+```bash
+# Run from home directory but target specific project
+openportal \
+  --name "client-a" \
+  --directory ~/projects/client-a/frontend \
+  --port 3000
+
+openportal \
+  --name "client-b" \
+  --directory ~/projects/client-b/app \
+  --port 3100
+```
+
+## Managing Instances
+
+### List All Running Instances
+
+```bash
+openportal list
+```
+
+Shows all active instances with their configuration.
+
+### Stop Specific Instance
+
+Stop instances by name or port:
+
+```bash
+# Stop by name
+openportal stop --name "website-frontend"
+
+# Stop by port
+openportal stop --port 3000
+
+# Stop all instances
+openportal stop --all
+```
+
+<Note>
+  The `stop` command gracefully shuts down both the Web UI and OpenCode server for the specified instance.
+</Note>
+
+### Clean Up Stale Entries
+
+If processes were killed ungracefully, clean up stale registry entries:
+
+```bash
+openportal clean
+```
+
+This removes entries for processes that are no longer running.
+
+## Remote Access for Multiple Instances
+
+### Via Tailscale VPN
+
+When accessing multiple instances remotely via Tailscale:
+
+```bash
+# On server, start multiple instances on different ports
+openportal --name "proj-a" --port 3000 --hostname 0.0.0.0
+openportal --name "proj-b" --port 3001 --hostname 0.0.0.0
+openportal --name "proj-c" --port 3002 --hostname 0.0.0.0
+
+# Access from mobile:
+# http://server-name:3000  (Project A)
+# http://server-name:3001  (Project B)
+# http://server-name:3002  (Project C)
+```
+
+<Tip>
+  Create mobile bookmarks for each instance with descriptive names:
+  - "Portal - Website" → http://server:3000
+  - "Portal - API" → http://server:3001
+  - "Portal - Mobile" → http://server:3002
+</Tip>
+
+### Using Nginx Reverse Proxy
+
+For cleaner URLs, set up Nginx to route by subdomain or path:
+
+#### Subdomain-based routing
+
+```nginx
+# /etc/nginx/sites-available/openportal
+
+# Frontend instance
+server {
+    listen 80;
+    server_name frontend.myserver.ts.net;
+    
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+# Backend instance
+server {
+    listen 80;
+    server_name backend.myserver.ts.net;
+    
+    location / {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+#### Path-based routing
+
+```nginx
+server {
+    listen 80;
+    server_name myserver.ts.net;
+    
+    location /frontend/ {
+        proxy_pass http://localhost:3000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    location /backend/ {
+        proxy_pass http://localhost:3001/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+Enable and reload:
+```bash
+sudo ln -s /etc/nginx/sites-available/openportal /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+## Persistent Multi-Instance Setup
+
+### Using systemd Services
+
+Create separate systemd services for each project:
+
+```bash
+# Create service for Project A
+sudo nano /etc/systemd/system/openportal-frontend.service
+```
+
+```ini
+[Unit]
+Description=OpenCode Portal - Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=your-username
+WorkingDirectory=/home/your-username/projects/website
+ExecStart=/home/your-username/.bun/bin/openportal --name "frontend" --port 3000 --hostname 0.0.0.0
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# Create service for Project B
+sudo nano /etc/systemd/system/openportal-backend.service
+```
+
+```ini
+[Unit]
+Description=OpenCode Portal - Backend
+After=network.target
+
+[Service]
+Type=simple
+User=your-username
+WorkingDirectory=/home/your-username/projects/api
+ExecStart=/home/your-username/.bun/bin/openportal --name "backend" --port 3001 --hostname 0.0.0.0
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start all services:
+
+```bash
+sudo systemctl enable openportal-frontend openportal-backend
+sudo systemctl start openportal-frontend openportal-backend
+
+# Check status
+sudo systemctl status openportal-frontend
+sudo systemctl status openportal-backend
+```
+
+### Using tmux for Multiple Sessions
+
+Organize multiple instances in tmux windows:
+
+```bash
+# Start tmux session
+tmux new -s portals
+
+# Window 0: Frontend
+cd ~/projects/website
+openportal --name "frontend"
+
+# Create new window (Ctrl+B, C)
+cd ~/projects/api
+openportal --name "backend"
+
+# Create another window
+cd ~/projects/mobile
+openportal --name "mobile"
+
+# Navigate between windows: Ctrl+B, 0/1/2
+# Detach: Ctrl+B, D
+# Reattach: tmux attach -t portals
+```
+
+### Using PM2 Process Manager
+
+PM2 provides excellent process management with monitoring:
+
+```bash
+# Install PM2
+npm install -g pm2
+
+# Start instances with PM2
+pm2 start openportal --name "frontend" -- --port 3000 --directory ~/projects/website
+pm2 start openportal --name "backend" -- --port 3001 --directory ~/projects/api
+pm2 start openportal --name "mobile" -- --port 3002 --directory ~/projects/mobile
+
+# View all processes
+pm2 list
+
+# View logs
+pm2 logs frontend
+pm2 logs backend
+
+# Auto-start on system boot
+pm2 startup
+pm2 save
+
+# Stop specific instance
+pm2 stop frontend
+
+# Restart instance
+pm2 restart backend
+```
+
+## Resource Management
+
+### Monitoring Resource Usage
+
+```bash
+# Check memory and CPU usage per instance
+top -p $(pgrep -f openportal | tr '\n' ',')
+
+# Or use htop for better visualization
+htop -p $(pgrep -f openportal | tr '\n' ',')
+```
+
+### Resource Limits
+
+If running many instances on limited resources:
+
+```bash
+# Limit resources using systemd (in service file)
+[Service]
+MemoryLimit=512M
+CPUQuota=50%
+```
+
+Or with Docker (see next section).
+
+## Docker Multi-Instance Setup
+
+Run instances in isolated containers:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+
+services:
+  portal-frontend:
+    image: oven/bun:latest
+    working_dir: /app/website
+    command: bunx openportal --hostname 0.0.0.0
+    ports:
+      - "3000:3000"
+      - "4000:4000"
+    volumes:
+      - ./projects/website:/app/website
+    restart: unless-stopped
+
+  portal-backend:
+    image: oven/bun:latest
+    working_dir: /app/api
+    command: bunx openportal --hostname 0.0.0.0
+    ports:
+      - "3001:3000"
+      - "4001:4000"
+    volumes:
+      - ./projects/api:/app/api
+    restart: unless-stopped
+
+  portal-mobile:
+    image: oven/bun:latest
+    working_dir: /app/mobile
+    command: bunx openportal --hostname 0.0.0.0
+    ports:
+      - "3002:3000"
+      - "4002:4000"
+    volumes:
+      - ./projects/mobile:/app/mobile
+    restart: unless-stopped
+```
+
+Start all instances:
+```bash
+docker-compose up -d
+
+# View logs
+docker-compose logs -f portal-frontend
+
+# Stop all
+docker-compose down
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Naming Conventions">
+    Use consistent, descriptive names:
+    
+    - Include project name: `client-acme-frontend`
+    - Include environment: `api-staging`, `api-production`
+    - Keep it short but meaningful: `docs`, `admin-panel`
+    - Avoid special characters: use hyphens, not spaces or underscores
+  </Accordion>
+
+  <Accordion title="Port Allocation">
+    Maintain a port allocation document:
+    
+    ```markdown
+    # Port Allocations
+    
+    | Project          | Web UI | OpenCode | Notes          |
+    |------------------|--------|----------|----------------|
+    | website-frontend | 3000   | 4000     | Main website   |
+    | api-backend      | 3001   | 4001     | REST API       |
+    | admin-panel      | 3002   | 4002     | Admin UI       |
+    | docs-site        | 3003   | 4003     | Documentation  |
+    ```
+  </Accordion>
+
+  <Accordion title="Session Organization">
+    - Use clear session names within each instance
+    - Delete old sessions regularly to avoid clutter
+    - Keep sessions focused on specific features or bugs
+    - Document session purposes in the first message
+  </Accordion>
+
+  <Accordion title="Backup and Migration">
+    OpenCode sessions are stored in:
+    ```
+    ~/.config/opencode/sessions/
+    ```
+    
+    Each instance shares this directory. To separate instances completely, use different user accounts or Docker containers.
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<Accordion title="Port conflicts">
+  **Error:** `Port 3000 is already in use`
+  
+  **Solutions:**
+  1. Check what's using the port:
+     ```bash
+     lsof -i :3000
+     ```
+  
+  2. Use a different port:
+     ```bash
+     openportal --port 3010
+     ```
+  
+  3. Stop the conflicting process:
+     ```bash
+     kill $(lsof -t -i:3000)
+     ```
+</Accordion>
+
+<Accordion title="Can't find instance in list">
+  **Issue:** Started instance but it doesn't appear in `openportal list`
+  
+  **Debug:**
+  1. Check if process is running:
+     ```bash
+     ps aux | grep openportal
+     ```
+  
+  2. Clean stale entries:
+     ```bash
+     openportal clean
+     ```
+  
+  3. Check registry file:
+     ```bash
+     cat ~/.config/openportal/registry.json
+     ```
+</Accordion>
+
+<Accordion title="High memory usage with multiple instances">
+  **Symptoms:** Server becomes slow with many instances
+  
+  **Solutions:**
+  1. Check resource usage:
+     ```bash
+     htop
+     ```
+  
+  2. Limit number of concurrent instances
+  3. Increase server RAM
+  4. Use resource limits (systemd or Docker)
+  5. Stop unused instances:
+     ```bash
+     openportal stop --name "unused-instance"
+     ```
+</Accordion>
+
+<Accordion title="Instances mixing up sessions">
+  **Issue:** Sessions appearing in wrong instance
+  
+  **Explanation:** All instances share the same OpenCode sessions directory.
+  
+  **Workarounds:**
+  1. Use clear session naming: `[project-name] feature description`
+  2. Run instances as different users
+  3. Use Docker with separate volumes
+  4. Delete sessions from the correct instance context
+</Accordion>
+
+## Next Steps
+
+- [Mobile access guide](/guides/mobile-access) for accessing multiple instances remotely
+- [Tailscale setup](/guides/tailscale-setup) for secure VPN access
+- [Troubleshooting guide](/guides/troubleshooting) for more common issues

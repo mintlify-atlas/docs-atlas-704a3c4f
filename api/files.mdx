@@ -1,0 +1,194 @@
+---
+title: Files API
+description: File search and operations for OpenCode projects
+---
+
+## Overview
+
+The Files API provides file search capabilities within OpenCode projects, allowing you to quickly find files by name.
+
+## Search Files
+
+Search for files in the project by name pattern.
+
+```http
+GET /api/opencode/:port/files/search?q=<query>
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+### Query Parameters
+
+<ParamField query="q" type="string" required>
+  Search query string to match against file names
+</ParamField>
+
+### Response
+
+<ResponseField name="files" type="array">
+  Array of file path strings matching the query
+</ResponseField>
+
+### Example
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search?q=api"
+```
+
+```json Response
+[
+  "src/api/users.ts",
+  "src/api/auth.ts",
+  "src/api/posts.ts",
+  "tests/api/users.test.ts",
+  "docs/api-reference.md"
+]
+```
+
+### Empty Query
+
+If no query is provided or the query is empty, an empty array is returned:
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search"
+```
+
+```json Response
+[]
+```
+
+---
+
+## Search Patterns
+
+### Exact Match
+
+Search for exact filename matches:
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search?q=config.ts"
+```
+
+### Partial Match
+
+Search for files containing a substring:
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search?q=test"
+```
+
+Will match: `test.ts`, `user.test.ts`, `testing-utils.ts`, etc.
+
+### Extension Search
+
+Search by file extension:
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search?q=.tsx"
+```
+
+### Directory Path
+
+Search including directory names:
+
+```bash
+curl "http://localhost:3000/api/opencode/3100/files/search?q=components/"
+```
+
+---
+
+## Use Cases
+
+### Quick File Navigation
+
+```javascript
+async function findFile(filename) {
+  const response = await fetch(
+    `http://localhost:3000/api/opencode/3100/files/search?q=${encodeURIComponent(filename)}`
+  );
+  const files = await response.json();
+  return files[0]; // Return first match
+}
+
+const userFile = await findFile('users.ts');
+console.log('Found:', userFile);
+```
+
+### Build Tool Integration
+
+Find all test files:
+
+```javascript
+const response = await fetch(
+  'http://localhost:3000/api/opencode/3100/files/search?q=.test.ts'
+);
+const testFiles = await response.json();
+
+console.log(`Found ${testFiles.length} test files`);
+testFiles.forEach(file => console.log(`  - ${file}`));
+```
+
+### IDE Integration
+
+Implement fuzzy file search:
+
+```python
+import requests
+from urllib.parse import quote
+
+def search_files(port, query):
+    url = f'http://localhost:3000/api/opencode/{port}/files/search'
+    response = requests.get(url, params={'q': query})
+    return response.json()
+
+# Search for TypeScript files
+ts_files = search_files(3100, '.ts')
+print(f"Found {len(ts_files)} TypeScript files")
+```
+
+---
+
+## Error Responses
+
+### Invalid Port
+
+```json
+{
+  "statusCode": 500,
+  "message": "Invalid port"
+}
+```
+
+---
+
+## Notes
+
+<Note>
+  The search is performed by the OpenCode instance's file indexing system, which maintains a fast searchable index of all project files.
+</Note>
+
+<Info>
+  Search results are case-sensitive and match against the full file path relative to the project root.
+</Info>
+
+<Tip>
+  For better performance with large projects, use more specific search queries to narrow down results.
+</Tip>
+
+<Warning>
+  The search query must be URL-encoded when passed as a query parameter. Special characters should be properly encoded.
+</Warning>
+
+### URL Encoding Examples
+
+```bash
+# Space in query
+curl "http://localhost:3000/api/opencode/3100/files/search?q=my%20file"
+
+# Special characters
+curl "http://localhost:3000/api/opencode/3100/files/search?q=file%2Bname"
+```

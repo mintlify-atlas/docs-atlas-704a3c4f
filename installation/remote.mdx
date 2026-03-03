@@ -1,0 +1,376 @@
+---
+title: Remote Server Setup
+description: Deploy OpenCode Portal on a remote server with Tailscale for secure access
+---
+
+OpenCode Portal is designed for remote access to your OpenCode instance. This guide shows you how to deploy the portal on a VPS and access it securely from your mobile device or any other machine using Tailscale.
+
+## Use Case
+
+This setup allows you to:
+
+- Access OpenCode from your mobile device when you don't have your laptop
+- Work on code from anywhere with an internet connection
+- Share OpenCode access with team members securely
+
+**Architecture:**
+
+```
+[Your Phone/Device] ---(Tailscale VPN)---> [VPS running Portal + OpenCode]
+```
+
+## Prerequisites
+
+- A VPS or remote server (Ubuntu, Debian, or similar)
+- SSH access to your server
+- A [Tailscale](https://tailscale.com) account (free tier available)
+
+## Setup Steps
+
+<Steps>
+  <Step title="Install Bun on Your Server">
+    SSH into your server and install Bun:
+
+    ```bash
+    curl -fsSL https://bun.sh/install | bash
+    ```
+
+    Add Bun to your PATH (if not done automatically):
+
+    ```bash
+    export BUN_INSTALL="$HOME/.bun"
+    export PATH="$BUN_INSTALL/bin:$PATH"
+    ```
+
+    Add these lines to your `~/.bashrc` or `~/.zshrc` to make them permanent.
+  </Step>
+
+  <Step title="Install OpenCode">
+    Install OpenCode globally on your server:
+
+    ```bash
+    bun install -g opencode
+    ```
+
+    Verify the installation:
+
+    ```bash
+    opencode --version
+    ```
+  </Step>
+
+  <Step title="Install OpenPortal">
+    Install OpenPortal globally:
+
+    ```bash
+    bun install -g openportal
+    ```
+  </Step>
+
+  <Step title="Install and Configure Tailscale">
+    Install Tailscale on your server:
+
+    ```bash
+    curl -fsSL https://tailscale.com/install.sh | sh
+    ```
+
+    Start and authenticate Tailscale:
+
+    ```bash
+    sudo tailscale up
+    ```
+
+    Follow the authentication URL to connect your server to your Tailscale network.
+
+    Get your server's Tailscale IP:
+
+    ```bash
+    tailscale ip -4
+    ```
+
+    Note this IP address - you'll use it to access OpenPortal.
+  </Step>
+
+  <Step title="Start OpenPortal on Your Server">
+    Navigate to your project directory and start OpenPortal:
+
+    ```bash
+    cd /path/to/your/project
+    openportal
+    ```
+
+    For production use, you'll want to keep it running in the background. See the [Process Management](#process-management) section below.
+  </Step>
+
+  <Step title="Install Tailscale on Your Mobile Device">
+    Install the Tailscale app on your phone:
+
+    - **iOS**: Download from the [App Store](https://apps.apple.com/app/tailscale/id1470499037)
+    - **Android**: Download from [Google Play](https://play.google.com/store/apps/details?id=com.tailscale.ipn)
+
+    Sign in with the same Tailscale account.
+  </Step>
+
+  <Step title="Access OpenPortal from Your Device">
+    On your mobile device, open a browser and navigate to:
+
+    ```
+    http://[tailscale-ip]:3000
+    ```
+
+    Replace `[tailscale-ip]` with your server's Tailscale IP from Step 4.
+
+    You should now see the OpenCode Portal interface!
+  </Step>
+</Steps>
+
+## Network Configuration
+
+### Binding to All Interfaces
+
+By default, OpenPortal binds to `0.0.0.0` (all network interfaces), which allows access from Tailscale.
+
+If you want to bind to a specific interface:
+
+```bash
+openportal --hostname 0.0.0.0
+```
+
+### Custom Ports
+
+If you need to use different ports:
+
+```bash
+# Custom Web UI port
+openportal --port 8080
+
+# Custom OpenCode server port
+openportal --opencode-port 5000
+
+# Both custom ports
+openportal --port 8080 --opencode-port 5000
+```
+
+Remember to use the correct port when accessing from your device.
+
+## Process Management
+
+For production use, you'll want OpenPortal to run persistently in the background.
+
+### Using systemd
+
+Create a systemd service file:
+
+```bash
+sudo nano /etc/systemd/system/openportal.service
+```
+
+Add the following content (adjust paths as needed):
+
+```ini
+[Unit]
+Description=OpenCode Portal
+After=network.target
+
+[Service]
+Type=simple
+User=your-username
+WorkingDirectory=/path/to/your/project
+ExecStart=/home/your-username/.bun/bin/openportal
+Restart=always
+RestartSec=10
+Environment="PATH=/home/your-username/.bun/bin:/usr/local/bin:/usr/bin:/bin"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable service to start on boot
+sudo systemctl enable openportal
+
+# Start the service
+sudo systemctl start openportal
+
+# Check status
+sudo systemctl status openportal
+```
+
+Manage the service:
+
+```bash
+# Stop the service
+sudo systemctl stop openportal
+
+# Restart the service
+sudo systemctl restart openportal
+
+# View logs
+sudo journalctl -u openportal -f
+```
+
+### Using screen
+
+For a simpler approach, use `screen`:
+
+```bash
+# Start a new screen session
+screen -S openportal
+
+# Start OpenPortal
+cd /path/to/your/project
+openportal
+
+# Detach from screen: Press Ctrl+A, then D
+```
+
+Reattach to the session:
+
+```bash
+screen -r openportal
+```
+
+### Using tmux
+
+Alternatively, use `tmux`:
+
+```bash
+# Start a new tmux session
+tmux new -s openportal
+
+# Start OpenPortal
+cd /path/to/your/project
+openportal
+
+# Detach from tmux: Press Ctrl+B, then D
+```
+
+Reattach to the session:
+
+```bash
+tmux attach -t openportal
+```
+
+## Security Considerations
+
+### Tailscale Security
+
+Tailscale provides secure, encrypted connections between your devices:
+
+- All traffic is encrypted using WireGuard
+- Only devices in your Tailscale network can access your server
+- No need to expose ports to the public internet
+
+### Additional Security Measures
+
+<Warning>
+  Never expose OpenPortal directly to the public internet without proper authentication and HTTPS.
+</Warning>
+
+If you need to expose OpenPortal publicly:
+
+1. **Use a reverse proxy** (nginx, Caddy) with HTTPS
+2. **Add authentication** (basic auth, OAuth)
+3. **Configure firewall rules** to restrict access
+4. **Use strong passwords** for your OpenCode instances
+
+Example nginx configuration with basic auth:
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/key.pem;
+
+    location / {
+        auth_basic "Restricted";
+        auth_basic_user_file /etc/nginx/.htpasswd;
+        
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+## Monitoring and Maintenance
+
+### Check Running Instances
+
+```bash
+openportal list
+```
+
+### View Logs (systemd)
+
+```bash
+# Follow logs in real-time
+sudo journalctl -u openportal -f
+
+# View recent logs
+sudo journalctl -u openportal -n 100
+```
+
+### Restart After Updates
+
+After updating OpenPortal:
+
+```bash
+# Update OpenPortal
+bun install -g openportal
+
+# Restart the service
+sudo systemctl restart openportal
+
+# Or if using screen/tmux, stop and restart manually
+openportal stop
+openportal
+```
+
+## Troubleshooting
+
+### Cannot Connect from Mobile Device
+
+1. Verify Tailscale is connected on both devices
+2. Check your server's Tailscale IP: `tailscale ip -4`
+3. Ensure OpenPortal is running: `openportal list`
+4. Verify the port is correct (default: 3000)
+
+### Tailscale Connection Issues
+
+```bash
+# Check Tailscale status
+tailscale status
+
+# Restart Tailscale
+sudo systemctl restart tailscaled
+```
+
+### OpenPortal Service Not Starting
+
+```bash
+# Check service status
+sudo systemctl status openportal
+
+# View detailed logs
+sudo journalctl -u openportal -n 50
+
+# Check if OpenCode is installed
+which opencode
+```
+
+## Next Steps
+
+- Explore [Docker deployment](/installation/docker) for containerized setups
+- Configure multiple project instances with custom names
+- Set up automated backups for your project files

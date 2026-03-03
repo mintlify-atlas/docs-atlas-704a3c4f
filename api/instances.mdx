@@ -1,0 +1,413 @@
+---
+title: Instances API
+description: Manage OpenCode instances
+---
+
+## Overview
+
+The Instances API provides information about running OpenCode instances managed by the Portal.
+
+## List Instances
+
+Retrieve all running OpenCode instances.
+
+```http
+GET /api/instances
+```
+
+### Authentication
+
+No authentication required.
+
+### Response
+
+<ResponseField name="total" type="number">
+  Total number of running instances
+</ResponseField>
+
+<ResponseField name="instances" type="array">
+  Array of instance objects
+  
+  <Expandable title="Instance object">
+    <ResponseField name="id" type="string">
+      Unique instance identifier
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Human-readable instance name
+    </ResponseField>
+    
+    <ResponseField name="directory" type="string">
+      Absolute path to the project directory
+    </ResponseField>
+    
+    <ResponseField name="port" type="number">
+      OpenCode instance port number
+    </ResponseField>
+    
+    <ResponseField name="hostname" type="string">
+      Hostname where the instance is running (e.g., "localhost", "0.0.0.0")
+    </ResponseField>
+    
+    <ResponseField name="opencodePid" type="number" optional>
+      Process ID of the OpenCode server (null for Docker instances)
+    </ResponseField>
+    
+    <ResponseField name="webPid" type="number" optional>
+      Process ID of the web server
+    </ResponseField>
+    
+    <ResponseField name="startedAt" type="string">
+      ISO 8601 timestamp when the instance was started
+    </ResponseField>
+    
+    <ResponseField name="instanceType" type="string">
+      Type of instance: `process` or `docker`
+    </ResponseField>
+    
+    <ResponseField name="containerId" type="string" optional>
+      Docker container ID (only for Docker instances)
+    </ResponseField>
+    
+    <ResponseField name="state" type="string">
+      Current state: `running`
+    </ResponseField>
+    
+    <ResponseField name="status" type="string">
+      Human-readable status message
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/api/instances
+```
+
+```json Response
+{
+  "total": 2,
+  "instances": [
+    {
+      "id": "inst_abc123",
+      "name": "my-web-app",
+      "directory": "/home/user/projects/my-web-app",
+      "port": 3100,
+      "hostname": "localhost",
+      "opencodePid": 12345,
+      "webPid": 12346,
+      "startedAt": "2026-03-03T09:00:00.000Z",
+      "instanceType": "process",
+      "containerId": null,
+      "state": "running",
+      "status": "Running since 3/3/2026, 9:00:00 AM"
+    },
+    {
+      "id": "inst_def456",
+      "name": "api-service",
+      "directory": "/home/user/projects/api-service",
+      "port": 3101,
+      "hostname": "0.0.0.0",
+      "opencodePid": null,
+      "webPid": 12347,
+      "startedAt": "2026-03-03T10:30:00.000Z",
+      "instanceType": "docker",
+      "containerId": "abc123def456",
+      "state": "running",
+      "status": "Running since 3/3/2026, 10:30:00 AM"
+    }
+  ]
+}
+```
+
+---
+
+## Instance Types
+
+### Process Instances
+
+Instances running as native OS processes:
+
+- `instanceType`: `"process"`
+- `opencodePid`: Valid process ID
+- `containerId`: `null`
+
+### Docker Instances
+
+Instances running in Docker containers:
+
+- `instanceType`: `"docker"`
+- `opencodePid`: `null`
+- `containerId`: Docker container ID
+
+---
+
+## Use Cases
+
+### Dashboard Display
+
+Display all running instances in a web interface:
+
+```javascript
+async function loadInstances() {
+  const response = await fetch('http://localhost:3000/api/instances');
+  const { total, instances } = await response.json();
+  
+  console.log(`${total} instance(s) running:`);
+  instances.forEach(instance => {
+    console.log(`- ${instance.name} (${instance.directory})`);
+    console.log(`  Port: ${instance.port}`);
+    console.log(`  Status: ${instance.status}`);
+  });
+}
+```
+
+### Health Monitoring
+
+Monitor instance health:
+
+```python
+import requests
+import time
+
+def monitor_instances():
+    while True:
+        response = requests.get('http://localhost:3000/api/instances')
+        data = response.json()
+        
+        print(f"Running instances: {data['total']}")
+        
+        for instance in data['instances']:
+            print(f"  {instance['name']}: {instance['state']}")
+            
+            if instance['instanceType'] == 'docker':
+                print(f"    Container: {instance['containerId'][:12]}")
+            else:
+                print(f"    PID: {instance['opencodePid']}")
+        
+        time.sleep(30)
+```
+
+### Instance Discovery
+
+Find instances by directory or name:
+
+```javascript
+async function findInstanceByDirectory(directory) {
+  const response = await fetch('http://localhost:3000/api/instances');
+  const { instances } = await response.json();
+  
+  return instances.find(inst => inst.directory === directory);
+}
+
+const instance = await findInstanceByDirectory('/home/user/projects/my-app');
+if (instance) {
+  console.log(`Instance running on port ${instance.port}`);
+} else {
+  console.log('No instance found for this directory');
+}
+```
+
+---
+
+## Notes
+
+<Note>
+  Only running instances are returned. Stopped instances are automatically filtered out.
+</Note>
+
+<Info>
+  The instance list is read from `~/.portal.json` and filtered to show only currently running processes or containers.
+</Info>
+
+<Warning>
+  Process IDs (`opencodePid`, `webPid`) are platform-specific and should not be used for long-term reference. Use the `id` field for persistent identification.
+</Warning>
+
+<Tip>
+  Use the `port` field to construct API URLs for instance-specific endpoints:
+  ```
+  http://localhost:3000/api/opencode/{port}/sessions
+  ```
+</Tip>
+
+---
+
+## Additional Endpoints
+
+### Get Project Information
+
+Retrieve current project information for an instance:
+
+```http
+GET /api/opencode/:port/project/current
+```
+
+#### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+#### Response
+
+<ResponseField name="name" type="string">
+  Project name
+</ResponseField>
+
+<ResponseField name="worktree" type="string">
+  Absolute path to project directory
+</ResponseField>
+
+<ResponseField name="repository" type="string" optional>
+  Git repository URL if available
+</ResponseField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/project/current
+```
+
+```json Response
+{
+  "name": "my-web-app",
+  "worktree": "/home/user/projects/my-web-app",
+  "repository": "https://github.com/user/my-web-app.git"
+}
+```
+
+---
+
+### Health Check
+
+Check if an OpenCode instance is healthy:
+
+```http
+GET /api/opencode/:port/health
+```
+
+#### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+#### Response
+
+<ResponseField name="healthy" type="boolean">
+  Whether the instance is healthy and responding
+</ResponseField>
+
+<ResponseField name="port" type="number">
+  The instance port number
+</ResponseField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/health
+```
+
+```json Response
+{
+  "healthy": true,
+  "port": 3100
+}
+```
+
+---
+
+### Get Configuration
+
+Retrieve OpenCode configuration for an instance:
+
+```http
+GET /api/opencode/:port/config
+```
+
+#### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/config
+```
+
+---
+
+### Get Providers
+
+Retrieve available AI providers for an instance:
+
+```http
+GET /api/opencode/:port/providers
+```
+
+#### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+#### Response
+
+<ResponseField name="providers" type="array">
+  Array of available AI provider configurations
+</ResponseField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/providers
+```
+
+```json Response
+{
+  "providers": [
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "models": ["claude-4.5-sonnet", "claude-3-opus"]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "models": ["gpt-4", "gpt-3.5-turbo"]
+    }
+  ]
+}
+```
+
+---
+
+### Get Agents
+
+Retrieve available agents for an instance:
+
+```http
+GET /api/opencode/:port/agents
+```
+
+#### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+#### Response
+
+<ResponseField name="agents" type="array">
+  Array of available agent configurations
+</ResponseField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/agents
+```

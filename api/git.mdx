@@ -1,0 +1,142 @@
+---
+title: Git API
+description: Git operations for OpenCode projects
+---
+
+## Overview
+
+The Git API provides access to git operations for OpenCode projects, including retrieving diffs and repository information.
+
+## Get Git Diff
+
+Retrieve the git diff for the current HEAD of the project.
+
+```http
+GET /api/opencode/:port/git/diff
+```
+
+### Path Parameters
+
+<ParamField path="port" type="number" required>
+  The OpenCode instance port number
+</ParamField>
+
+### Response
+
+<ResponseField name="diff" type="string">
+  The git diff output from `git diff HEAD`
+</ResponseField>
+
+<ResponseField name="worktree" type="string">
+  Absolute path to the project worktree directory
+</ResponseField>
+
+### Example
+
+```bash
+curl http://localhost:3000/api/opencode/3100/git/diff
+```
+
+```json Response
+{
+  "diff": "diff --git a/src/api/users.ts b/src/api/users.ts\nindex 1234567..abcdefg 100644\n--- a/src/api/users.ts\n+++ b/src/api/users.ts\n@@ -10,6 +10,7 @@\n export async function getUser(id: string) {\n+  // Add validation\n   const user = await db.users.findById(id);\n   return user;\n }",
+  "worktree": "/home/user/projects/my-app"
+}
+```
+
+### Error Responses
+
+#### Invalid Port
+
+```json
+{
+  "statusCode": 500,
+  "message": "Invalid port"
+}
+```
+
+#### No Project Worktree
+
+```json
+{
+  "statusCode": 500,
+  "message": "No project worktree found"
+}
+```
+
+Returned when the OpenCode instance doesn't have an active project with a git repository.
+
+#### Git Command Failed
+
+```json
+{
+  "statusCode": 500,
+  "message": "Failed to get git diff"
+}
+```
+
+Returned when the git diff command fails (e.g., not a git repository, git not installed).
+
+---
+
+## Use Cases
+
+### Code Review Integration
+
+Retrieve current changes for code review workflows:
+
+```bash
+curl http://localhost:3000/api/opencode/3100/git/diff | jq -r '.diff'
+```
+
+### CI/CD Integration
+
+Get uncommitted changes before running tests:
+
+```javascript
+const response = await fetch('http://localhost:3000/api/opencode/3100/git/diff');
+const { diff, worktree } = await response.json();
+
+if (diff.trim()) {
+  console.log('Uncommitted changes detected in:', worktree);
+  console.log(diff);
+}
+```
+
+### Monitoring Changes
+
+Poll for changes during development:
+
+```python
+import requests
+import time
+
+def watch_changes(port, interval=5):
+    while True:
+        response = requests.get(f'http://localhost:3000/api/opencode/{port}/git/diff')
+        data = response.json()
+        
+        if data['diff']:
+            print(f"Changes in {data['worktree']}:")
+            print(data['diff'])
+        
+        time.sleep(interval)
+
+watch_changes(3100)
+```
+
+---
+
+## Notes
+
+<Note>
+  The diff is generated using `git diff HEAD`, which shows all uncommitted changes in the working directory and staging area.
+</Note>
+
+<Warning>
+  Large repositories with many changes may produce very large diff outputs. The API has a buffer limit of 10MB for the git diff output.
+</Warning>
+
+<Info>
+  This endpoint requires the project to be a git repository. If the project directory is not a git repository, the endpoint will return an error.
+</Info>

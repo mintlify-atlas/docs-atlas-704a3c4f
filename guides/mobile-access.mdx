@@ -1,0 +1,271 @@
+---
+title: Mobile Access Guide
+description: Access and control your OpenCode Portal from mobile devices
+---
+
+## Overview
+
+One of the primary use cases for OpenCode Portal is **mobile access**. This guide will help you set up and optimize your experience when accessing OpenCode Portal from smartphones and tablets.
+
+<Info>
+  OpenCode Portal was specifically designed with mobile-first responsiveness in mind, addressing limitations in the official OpenCode UI that is currently under development.
+</Info>
+
+## Why Mobile Access?
+
+Mobile access to OpenCode Portal enables you to:
+
+- Continue working on code when you're away from your laptop
+- Review and respond to AI-generated code on the go
+- Monitor long-running AI tasks from anywhere
+- Quick bug fixes and emergency deployments from your phone
+
+## Architecture
+
+The typical mobile access setup looks like this:
+
+```
+[Your Phone/Tablet] ---(VPN: Tailscale)---> [VPS/Server running Portal + OpenCode]
+```
+
+This architecture ensures:
+- **Security**: Traffic is encrypted through VPN (no public exposure)
+- **Low latency**: Direct VPN connection to your server
+- **Reliability**: Server runs 24/7, always accessible
+
+## Setup Steps
+
+<Steps>
+  <Step title="Deploy Portal on a Server">
+    First, deploy OpenCode Portal on a VPS or server that runs 24/7.
+
+    ```bash
+    # SSH into your VPS
+    ssh user@your-vps
+
+    # Install Bun (if not already installed)
+    curl -fsSL https://bun.sh/install | bash
+
+    # Install OpenCode
+    bun install -g opencode
+
+    # Install OpenCode Portal
+    bun install -g openportal
+    ```
+  </Step>
+
+  <Step title="Set Up VPN Access">
+    Install and configure Tailscale (or your preferred VPN solution) on both your server and mobile device.
+
+    See the [Tailscale Setup Guide](/guides/tailscale-setup) for detailed instructions.
+  </Step>
+
+  <Step title="Start Portal with Remote Access">
+    Start Portal bound to all interfaces (0.0.0.0) so it's accessible via VPN:
+
+    ```bash
+    cd /path/to/your/project
+    openportal --hostname 0.0.0.0
+    ```
+
+    The portal will be accessible at:
+    - From server: `http://localhost:3000`
+    - From VPN: `http://[tailscale-ip]:3000`
+    - With MagicDNS: `http://[machine-name]:3000`
+  </Step>
+
+  <Step title="Access from Mobile">
+    On your mobile device:
+
+    1. Connect to your Tailscale VPN
+    2. Open your mobile browser
+    3. Navigate to `http://[your-server-tailscale-name]:3000`
+    4. Bookmark for easy access
+  </Step>
+</Steps>
+
+## Mobile Browser Recommendations
+
+### iOS
+
+**Best Options:**
+- **Safari** (recommended) - Best performance and PWA support
+- **Chrome** - Good compatibility
+- **Firefox** - Alternative option
+
+**Add to Home Screen:**
+1. Open Portal in Safari
+2. Tap the Share button
+3. Select "Add to Home Screen"
+4. Portal will launch as a standalone app
+
+### Android
+
+**Best Options:**
+- **Chrome** (recommended) - Best compatibility
+- **Firefox** - Good alternative
+- **Samsung Internet** - Good performance on Samsung devices
+
+**Add to Home Screen:**
+1. Open Portal in Chrome
+2. Tap the three-dot menu
+3. Select "Add to Home screen"
+4. Portal will appear as an app icon
+
+## Mobile Usage Tips
+
+### Optimizing Chat Interface
+
+<Accordion title="Use landscape mode for coding">
+  When reviewing or editing code, rotate your device to landscape mode for a wider view. The Portal UI adapts to show more content horizontally.
+</Accordion>
+
+<Accordion title="File mentions on mobile">
+  To mention files in chat:
+  
+  1. Type `@` to trigger file autocomplete
+  2. Use your keyboard to filter files
+  3. Tap to select from the dropdown
+  
+  Alternatively, use the file picker icon in the chat input (if available).
+</Accordion>
+
+<Accordion title="Managing sessions efficiently">
+  - Use descriptive session names to identify them easily on small screens
+  - Delete old sessions regularly to keep the list manageable
+  - Switch between sessions using the session selector in the header
+</Accordion>
+
+### Performance Optimization
+
+<Card title="Network Considerations" icon="wifi">
+  - VPN connections can consume more battery - monitor your usage
+  - On cellular data, be mindful of data usage (especially when viewing large code files)
+  - For best performance, use WiFi when possible
+</Card>
+
+### Battery Management
+
+- Keep Portal open in a browser tab rather than constantly reopening
+- Use dark mode to reduce battery consumption on OLED screens
+- Enable browser data saver modes on cellular connections
+
+## Security Best Practices
+
+<Warning>
+  Never expose your Portal instance directly to the public internet. Always use a VPN like Tailscale for secure remote access.
+</Warning>
+
+### Recommended Security Measures:
+
+1. **Use VPN Always**: Route all traffic through Tailscale or similar VPN
+2. **Keep Software Updated**: Regularly update Portal, OpenCode, and system packages
+3. **Use Strong Authentication**: If your VPN supports MFA, enable it
+4. **Monitor Access**: Check Tailscale logs for unexpected connections
+5. **Dedicated User**: Run Portal under a non-root user with limited permissions
+
+## Running Portal Persistently
+
+To keep Portal running even after you disconnect from SSH:
+
+### Using Screen
+
+```bash
+# Start a screen session
+screen -S openportal
+
+# Start Portal
+cd /path/to/project
+openportal
+
+# Detach: Press Ctrl+A, then D
+# Reattach later: screen -r openportal
+```
+
+### Using tmux
+
+```bash
+# Start a tmux session
+tmux new -s openportal
+
+# Start Portal
+cd /path/to/project
+openportal
+
+# Detach: Press Ctrl+B, then D
+# Reattach later: tmux attach -t openportal
+```
+
+### Using systemd (Recommended)
+
+Create a systemd service for automatic startup and management:
+
+```bash
+# Create service file
+sudo nano /etc/systemd/system/openportal.service
+```
+
+Add the following configuration:
+
+```ini
+[Unit]
+Description=OpenCode Portal
+After=network.target
+
+[Service]
+Type=simple
+User=your-username
+WorkingDirectory=/path/to/your/project
+ExecStart=/home/your-username/.bun/bin/openportal --hostname 0.0.0.0
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl enable openportal
+sudo systemctl start openportal
+sudo systemctl status openportal
+```
+
+## Troubleshooting Mobile Access
+
+<Accordion title="Can't connect from mobile device">
+  **Check these items:**
+  
+  1. Is Tailscale connected on both devices? Check the VPN icon
+  2. Is Portal running? SSH to server and check with `openportal list`
+  3. Is Portal bound to 0.0.0.0? Check with `--hostname 0.0.0.0` flag
+  4. Can you ping the server? Try `ping [server-name]` in a terminal app
+  5. Is the port correct? Default is 3000 unless you specified otherwise
+</Accordion>
+
+<Accordion title="Portal is slow on mobile">
+  **Performance tips:**
+  
+  - Check your VPN connection strength
+  - Ensure you're on a stable WiFi or cellular connection
+  - Try clearing browser cache and reloading
+  - Check server resources: `htop` or `top` on the VPS
+  - Consider upgrading VPS resources if consistently slow
+</Accordion>
+
+<Accordion title="UI elements not responsive/clickable">
+  **Try these fixes:**
+  
+  - Force refresh the page (pull down in Safari, or Ctrl+Shift+R in Chrome)
+  - Clear browser cache and cookies
+  - Try a different mobile browser
+  - Check if browser is up to date
+  - Disable browser extensions that might interfere
+</Accordion>
+
+## Next Steps
+
+- [Set up Tailscale VPN](/guides/tailscale-setup) for secure remote access
+- [Manage multiple projects](/guides/multiple-projects) on the same server
+- [Troubleshooting guide](/guides/troubleshooting) for common issues

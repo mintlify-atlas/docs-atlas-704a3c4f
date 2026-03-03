@@ -1,0 +1,452 @@
+---
+title: CLI Commands
+description: Complete reference for all OpenPortal CLI commands with examples
+---
+
+## Command Structure
+
+```bash
+openportal [command] [options]
+```
+
+All commands support the standard options like `--directory`, `--port`, and `--hostname`. See [Options](/cli/options) for the complete list.
+
+## Default Command
+
+When run without a command, OpenPortal starts both the OpenCode server and Web UI.
+
+```bash
+openportal [directory] [options]
+```
+
+### Examples
+
+```bash
+# Start in current directory
+openportal
+```
+
+```bash
+# Start in specific directory
+openportal /path/to/project
+```
+
+```bash
+# Start with custom ports
+openportal --port 8080 --opencode-port 9000
+```
+
+```bash
+# Start in Docker mode
+openportal --docker
+```
+
+```bash
+# Start with custom name
+openportal --name my-app -d ./src
+```
+
+### Output
+
+```
+Starting OpenPortal...
+  Name: my-project
+  Directory: /home/user/my-project
+  Web UI Port: 3000
+  OpenCode Port: 4000
+  Hostname: 0.0.0.0
+  Mode: Process
+Starting OpenCode server...
+Starting Web UI server...
+
+✅ OpenPortal started!
+   OpenCode PID: 12345
+   Web UI PID: 12346
+
+📱 Access OpenPortal at http://localhost:3000
+🔧 OpenCode API at http://localhost:4000
+```
+
+### Behavior
+
+- Checks if an instance is already running for the directory
+- If already running, displays instance information and URLs
+- Auto-selects available ports if defaults are taken
+- Stores instance configuration in `~/.portal.json`
+- Starts both OpenCode server and Web UI
+
+---
+
+## run
+
+Start only the OpenCode server without the Web UI.
+
+```bash
+openportal run [options]
+```
+
+### Use Cases
+
+- Running OpenCode as a backend API service
+- Connecting custom clients to OpenCode
+- Running in headless environments
+- Development and testing of OpenCode integrations
+
+### Examples
+
+```bash
+# Start OpenCode server only
+openportal run
+```
+
+```bash
+# Start in specific directory with custom port
+openportal run -d /path/to/project --opencode-port 5000
+```
+
+```bash
+# Run OpenCode in Docker container
+openportal run --docker
+```
+
+```bash
+# Run with custom hostname
+openportal run --hostname 127.0.0.1
+```
+
+### Output
+
+```
+Starting OpenCode server...
+  Name: my-project
+  Directory: /home/user/my-project
+  OpenCode Port: 4000
+  Hostname: 0.0.0.0
+  Mode: Process
+Starting OpenCode server...
+
+✅ OpenCode server started!
+   OpenCode PID: 12345
+🔧 OpenCode API at http://localhost:4000
+```
+
+### Docker Mode Output
+
+```
+Starting OpenCode server...
+  Name: my-project
+  Directory: /home/user/my-project
+  OpenCode Port: 4000
+  Hostname: 0.0.0.0
+  Mode: Docker
+Starting OpenCode in Docker container...
+  Image: ghcr.io/anomalyco/opencode:1.1.3
+  Mount: /home/user/my-project -> /home/user/my-project
+  Image ghcr.io/anomalyco/opencode:1.1.3 already available locally
+  Container ID: a1b2c3d4e5f6
+  Container Name: openportal-my-project-abc123
+
+✅ OpenCode server started!
+   Container ID: a1b2c3d4e5f6
+🔧 OpenCode API at http://localhost:4000
+```
+
+### Behavior
+
+- Only starts the OpenCode server process or container
+- Does not start the Web UI
+- Instance `port` is set to `null` in configuration
+- Instance `webPid` is set to `null` in configuration
+
+---
+
+## stop
+
+Stop a running OpenPortal instance.
+
+```bash
+openportal stop [options]
+```
+
+### Selection Logic
+
+1. If `--name` is provided, stops the instance with that name
+2. If `--directory` or `-d` is provided, stops the instance in that directory
+3. Otherwise, stops the instance in the current directory
+
+### Examples
+
+```bash
+# Stop instance in current directory
+openportal stop
+```
+
+```bash
+# Stop instance by name
+openportal stop --name my-app
+```
+
+```bash
+# Stop instance in specific directory
+openportal stop -d /path/to/project
+```
+
+### Output (Process Mode)
+
+```
+Stopped OpenCode (PID: 12345)
+Stopped Web UI (PID: 12346)
+
+Stopped: my-project
+```
+
+### Output (Docker Mode)
+
+```
+Stopped and removed Docker container (ID: a1b2c3d4e5f6)
+Stopped Web UI (PID: 12346)
+
+Stopped: my-project
+```
+
+### Behavior
+
+- Sends `SIGTERM` to processes for graceful shutdown
+- For Docker containers, stops and removes the container (timeout: 10s)
+- Removes instance entry from `~/.portal.json`
+- If process/container is already stopped, displays informational message
+- Exits with code 1 if no matching instance is found
+
+---
+
+## list
+
+List all running OpenPortal instances.
+
+```bash
+openportal list
+```
+
+**Alias:** `ls`
+
+```bash
+openportal ls
+```
+
+### Example Output
+
+```
+OpenPortal Instances:
+
+ID        NAME              TYPE      PORT  OPENCODE  STATUS        DIRECTORY
+------------------------------------------------------------------------------------------------------------------------
+abc123    my-project        process   3000  4000      running       /home/user/my-project
+def456    api-server        docker    -     5000      opencode      /home/user/api-server
+ghi789    web-app           process   8080  9000      running       /home/user/web-app
+```
+
+### Status Values
+
+- `running` - Both OpenCode and Web UI are running
+- `opencode` - Only OpenCode server is running (from `run` command)
+- `web only` - Only Web UI is running (OpenCode stopped)
+- `stopped` - Neither component is running
+
+### Column Descriptions
+
+- **ID** - Unique instance identifier
+- **NAME** - Instance name (directory basename or custom name)
+- **TYPE** - Deployment mode (`process` or `docker`)
+- **PORT** - Web UI port (`-` if not applicable)
+- **OPENCODE** - OpenCode server port
+- **STATUS** - Current running status
+- **DIRECTORY** - Working directory path
+
+### Behavior
+
+- Checks actual process/container status for each instance
+- Automatically removes stale entries from configuration
+- Updates `~/.portal.json` if stale entries are found
+- Shows "No OpenPortal instances running." if no instances exist
+
+---
+
+## clean
+
+Remove stale instance entries from the configuration.
+
+```bash
+openportal clean
+```
+
+### Use Cases
+
+- Clean up after processes crashed or were killed externally
+- Remove orphaned Docker containers
+- Reset configuration after manual process termination
+
+### Example Output
+
+```
+Removed stale entry: old-project (process)
+Removed stale entry: test-app (docker)
+
+Config cleaned. 2 active instance(s).
+```
+
+### Behavior
+
+- Checks each instance in `~/.portal.json`
+- Verifies if processes are running (process mode) or containers exist (docker mode)
+- For stale Docker instances, attempts to stop and remove containers
+- Removes entries for instances that are not running
+- Keeps entries for instances that are still active
+- Updates `~/.portal.json` with cleaned configuration
+
+---
+
+## Help
+
+Display help information.
+
+```bash
+openportal --help
+```
+
+**Short form:**
+
+```bash
+openportal -h
+```
+
+### Output
+
+```
+OpenPortal CLI - Run OpenCode with a web UI
+
+Usage: openportal [command] [options]
+
+Commands:
+  (default)       Start OpenCode server and Web UI
+  run [options]   Start only OpenCode server (no Web UI)
+  stop            Stop running instances
+  list, ls        List running instances
+  clean           Clean up stale entries
+
+Options:
+  -h, --help              Show this help message
+  -d, --directory <path>  Working directory (default: current directory)
+  -p, --port <port>       Web UI port (default: 3000)
+  --opencode-port <port>  OpenCode server port (default: 4000)
+  --hostname <host>       Hostname to bind (default: 0.0.0.0)
+  --name <name>           Instance name
+  --docker                Run OpenCode in a Docker container instead of locally
+
+Environment Variables:
+  OPENCODE_DOCKER_IMAGE   Docker image to use (default: ghcr.io/anomalyco/opencode:1.1.3)
+  DOCKER_HOST             Docker daemon connection (e.g., tcp://localhost:2375)
+
+Examples:
+  openportal                               Start OpenCode + Web UI
+  openportal .                             Start OpenCode + Web UI in current dir
+  openportal run                           Start only OpenCode server
+  openportal run -d ./my-project           Start OpenCode in specific directory
+  openportal --port 8080                   Use custom web UI port
+  openportal --docker                      Run OpenCode in Docker container
+  openportal run --docker                  Run only OpenCode server in Docker
+  openportal stop                          Stop running instances
+  openportal list                          List running instances
+```
+
+---
+
+## Common Command Patterns
+
+### Starting Multiple Instances
+
+```bash
+# Terminal 1 - Start instance for project A
+cd ~/projects/project-a
+openportal --name proj-a --port 3000
+
+# Terminal 2 - Start instance for project B
+cd ~/projects/project-b
+openportal --name proj-b --port 3001
+
+# Terminal 3 - Check all instances
+openportal list
+```
+
+### Docker Workflow
+
+```bash
+# Start OpenCode in Docker for isolation
+openportal --docker
+
+# Later, stop the instance
+openportal stop
+
+# Clean up any orphaned containers
+openportal clean
+```
+
+### API Server Setup
+
+```bash
+# Run only OpenCode server on custom port
+openportal run --opencode-port 5000 --hostname 127.0.0.1
+
+# Connect your custom client to http://127.0.0.1:5000
+```
+
+### Production-like Environment
+
+```bash
+# Run with Docker and custom configuration
+openportal --docker \
+  --name production-sim \
+  --port 80 \
+  --opencode-port 8080 \
+  --hostname 0.0.0.0 \
+  -d /var/www/myapp
+```
+
+---
+
+## Error Handling
+
+### Instance Already Running
+
+```bash
+$ openportal
+OpenPortal is already running for this directory.
+  Name: my-project
+  Type: process
+  Web UI Port: 3000
+  OpenCode Port: 4000
+
+📱 Access OpenPortal at http://localhost:3000
+🔧 OpenCode API at http://localhost:4000
+```
+
+### No Instance Found (stop)
+
+```bash
+$ openportal stop
+No instance found.
+```
+
+### Unknown Command
+
+```bash
+$ openportal unknown
+Unknown command: unknown
+Use --help to see available commands.
+```
+
+### Sensitive Directory Mount (Docker)
+
+```bash
+$ openportal --docker -d /etc
+❌ Failed to start OpenPortal: Cannot mount sensitive system directory: /etc
+```

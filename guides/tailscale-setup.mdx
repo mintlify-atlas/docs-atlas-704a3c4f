@@ -1,0 +1,464 @@
+---
+title: Tailscale VPN Setup
+description: Step-by-step guide to setting up Tailscale for secure remote access to OpenCode Portal
+---
+
+## What is Tailscale?
+
+Tailscale is a zero-config VPN solution that creates a secure network between your devices. It's perfect for accessing your OpenCode Portal remotely without exposing it to the public internet.
+
+**Key Benefits:**
+- No port forwarding required
+- Encrypted peer-to-peer connections
+- Works behind NAT and firewalls
+- MagicDNS for easy device naming
+- Free for personal use (up to 100 devices)
+- Cross-platform (Linux, macOS, Windows, iOS, Android)
+
+## Architecture Overview
+
+```
+┌─────────────────┐         ┌──────────────────┐
+│  Mobile Device  │         │   VPS/Server     │
+│                 │         │                  │
+│  Tailscale IP:  │◄────────┤  Tailscale IP:   │
+│  100.x.x.2      │  VPN    │  100.x.x.1       │
+│                 │         │                  │
+│  Browser        │────────►│  Portal:3000     │
+└─────────────────┘         │  OpenCode:4000   │
+                            └──────────────────┘
+```
+
+## Complete Setup Guide
+
+<Steps>
+  <Step title="Create Tailscale Account">
+    1. Go to [https://tailscale.com](https://tailscale.com)
+    2. Click "Get Started" or "Sign Up"
+    3. Sign in with your preferred provider:
+       - GitHub (recommended for developers)
+       - Google
+       - Microsoft
+       - Email
+    
+    <Info>
+      The free personal plan includes up to 100 devices and all essential features.
+    </Info>
+  </Step>
+
+  <Step title="Install Tailscale on Your Server">
+    SSH into your VPS or server:
+
+    ```bash
+    ssh user@your-server
+    ```
+
+    Install Tailscale using the official installation script:
+
+    ```bash
+    curl -fsSL https://tailscale.com/install.sh | sh
+    ```
+
+    This script automatically detects your Linux distribution and installs the appropriate package.
+
+    **Manual installation for specific distributions:**
+
+    <Accordion title="Ubuntu/Debian">
+      ```bash
+      curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
+      curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/jammy.tailscale-keyring.list | sudo tee /etc/apt/sources.list.d/tailscale.list
+      sudo apt-get update
+      sudo apt-get install tailscale
+      ```
+    </Accordion>
+
+    <Accordion title="CentOS/RHEL/Fedora">
+      ```bash
+      curl -fsSL https://pkgs.tailscale.com/stable/centos/8/tailscale.repo | sudo tee /etc/yum.repos.d/tailscale.repo
+      sudo yum install tailscale
+      sudo systemctl enable --now tailscaled
+      ```
+    </Accordion>
+
+    <Accordion title="Arch Linux">
+      ```bash
+      sudo pacman -S tailscale
+      sudo systemctl enable --now tailscaled
+      ```
+    </Accordion>
+  </Step>
+
+  <Step title="Connect Server to Tailscale">
+    Start Tailscale and authenticate:
+
+    ```bash
+    sudo tailscale up
+    ```
+
+    This command will output a URL like:
+    ```
+    To authenticate, visit:
+    https://login.tailscale.com/a/xxxxxxxxxxxxx
+    ```
+
+    1. Copy the URL and open it in your browser
+    2. Sign in with the same account you created in Step 1
+    3. Authorize the device
+    4. Optionally give your device a friendly name
+
+    **Verify connection:**
+
+    ```bash
+    tailscale status
+    ```
+
+    You should see your device listed with a Tailscale IP (100.x.x.x).
+
+    **Get your server's Tailscale IP:**
+
+    ```bash
+    tailscale ip -4
+    ```
+  </Step>
+
+  <Step title="Install Tailscale on Mobile Device">
+    ### iOS
+
+    1. Open the App Store
+    2. Search for "Tailscale"
+    3. Install the official Tailscale app
+    4. Open the app
+    5. Sign in with the same account
+    6. Enable the VPN when prompted
+
+    ### Android
+
+    1. Open Google Play Store
+    2. Search for "Tailscale"
+    3. Install the official Tailscale app
+    4. Open the app
+    5. Sign in with the same account
+    6. Tap "Connect" to enable VPN
+
+    <Info>
+      After connecting, you should see all your Tailscale devices in the app, including your server.
+    </Info>
+  </Step>
+
+  <Step title="Enable MagicDNS (Recommended)">
+    MagicDNS lets you access devices by name instead of IP address.
+
+    1. Go to [https://login.tailscale.com/admin/dns](https://login.tailscale.com/admin/dns)
+    2. Click "Enable MagicDNS"
+    3. Optionally add a custom nameserver if needed
+
+    **Benefits:**
+    - Access server by name: `http://my-server:3000` instead of `http://100.x.x.1:3000`
+    - Names update automatically if IP changes
+    - Easier to remember and manage
+
+    **Test MagicDNS:**
+
+    On your mobile device (with Tailscale connected):
+    ```bash
+    # Use a terminal app like Termius or iSH
+    ping my-server-name
+    ```
+
+    <Note>
+      Device names are sanitized: spaces become hyphens, special characters removed.
+      Example: "My VPS Server" becomes "my-vps-server"
+    </Note>
+  </Step>
+
+  <Step title="Configure Firewall (if needed)">
+    If your server has a firewall, you may need to allow Tailscale traffic.
+
+    **UFW (Ubuntu/Debian):**
+    ```bash
+    # Tailscale manages its own firewall rules
+    # Usually no action needed, but ensure UFW allows Tailscale interface
+    sudo ufw allow in on tailscale0
+    ```
+
+    **firewalld (CentOS/RHEL):**
+    ```bash
+    sudo firewall-cmd --permanent --add-interface=tailscale0 --zone=trusted
+    sudo firewall-cmd --reload
+    ```
+
+    <Info>
+      Tailscale creates a network interface called `tailscale0` and manages its own firewall rules, so usually no additional configuration is needed.
+    </Info>
+  </Step>
+
+  <Step title="Start Portal for Remote Access">
+    Start OpenCode Portal bound to all interfaces:
+
+    ```bash
+    cd /path/to/your/project
+    openportal --hostname 0.0.0.0
+    ```
+
+    The `--hostname 0.0.0.0` flag ensures Portal listens on all network interfaces, including the Tailscale interface.
+
+    **Verify it's running:**
+    ```bash
+    openportal list
+    ```
+  </Step>
+
+  <Step title="Access Portal from Mobile">
+    On your mobile device:
+
+    1. Ensure Tailscale VPN is connected (check the app)
+    2. Open your mobile browser
+    3. Navigate to one of:
+       - With MagicDNS: `http://your-server-name:3000`
+       - With IP: `http://100.x.x.1:3000` (use your server's Tailscale IP)
+    4. Bookmark the page for quick access
+    5. Optionally add to home screen for app-like experience
+
+    <Check>
+      You should now see the OpenCode Portal interface and be able to create sessions and chat with the AI.
+    </Check>
+  </Step>
+</Steps>
+
+## Advanced Configuration
+
+### Subnet Routing
+
+If you want to access other devices on your server's local network through Tailscale:
+
+```bash
+# On your server, advertise subnet routes
+sudo tailscale up --advertise-routes=192.168.1.0/24
+
+# In Tailscale admin console, approve the routes
+# Go to Machines > [Your Server] > Edit route settings > Approve
+```
+
+### Exit Node
+
+Use your server as an exit node to route all internet traffic through it:
+
+```bash
+# On your server
+sudo tailscale up --advertise-exit-node
+
+# On mobile device, enable in Tailscale app:
+# Settings > Use exit node > Select your server
+```
+
+### Access Controls (ACLs)
+
+Restrict which devices can access specific services:
+
+1. Go to [https://login.tailscale.com/admin/acls](https://login.tailscale.com/admin/acls)
+2. Edit the JSON policy file
+3. Example restricting Portal access:
+
+```json
+{
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["tag:mobile"],
+      "dst": ["tag:server:3000,4000"]
+    }
+  ],
+  "tagOwners": {
+    "tag:mobile": ["your-email@example.com"],
+    "tag:server": ["your-email@example.com"]
+  }
+}
+```
+
+### SSH Over Tailscale
+
+Access your server via SSH through Tailscale:
+
+```bash
+# From any device on your Tailscale network
+ssh user@server-name
+
+# Or using Tailscale SSH (managed SSH)
+tailscale ssh user@server-name
+```
+
+Enable Tailscale SSH in admin console for managed keys and authentication.
+
+## Verification and Testing
+
+### Check Tailscale Status
+
+On your server:
+
+```bash
+# View status and connected peers
+tailscale status
+
+# View detailed network info
+tailscale netcheck
+
+# Test connectivity to specific device
+ping mobile-device-name
+```
+
+### Test Portal Access
+
+From your mobile device terminal (using Termius, iSH, or similar):
+
+```bash
+# Test if server is reachable
+ping server-name
+
+# Test if Portal port is open
+curl http://server-name:3000
+
+# Check Tailscale connection
+tailscale status
+```
+
+### Performance Testing
+
+```bash
+# On server
+iperf3 -s
+
+# On mobile (requires iperf3 installed in terminal app)
+iperf3 -c server-name
+```
+
+## Troubleshooting
+
+<Accordion title="Can't connect to Tailscale network">
+  **Check:**
+  
+  1. Is Tailscale running?
+     ```bash
+     sudo systemctl status tailscaled
+     ```
+  
+  2. Restart Tailscale:
+     ```bash
+     sudo systemctl restart tailscaled
+     sudo tailscale up
+     ```
+  
+  3. Check firewall isn't blocking Tailscale:
+     ```bash
+     sudo tailscale status
+     ```
+  
+  4. Verify you're using the same Tailscale account on all devices
+</Accordion>
+
+<Accordion title="MagicDNS not resolving device names">
+  **Solutions:**
+  
+  1. Verify MagicDNS is enabled in admin console
+  2. Restart Tailscale on the device:
+     ```bash
+     sudo systemctl restart tailscaled
+     ```
+  3. Try using the IP address instead: `tailscale ip -4`
+  4. Check device name doesn't have invalid characters
+  5. Wait a few minutes for DNS propagation
+</Accordion>
+
+<Accordion title="Can't access Portal through Tailscale">
+  **Debug steps:**
+  
+  1. Verify Portal is running:
+     ```bash
+     openportal list
+     ```
+  
+  2. Check Portal is bound to 0.0.0.0:
+     ```bash
+     # Should show 0.0.0.0:3000, not 127.0.0.1:3000
+     netstat -tlnp | grep 3000
+     ```
+  
+  3. Test local access on server:
+     ```bash
+     curl http://localhost:3000
+     ```
+  
+  4. Test Tailscale access from server itself:
+     ```bash
+     curl http://$(tailscale ip -4):3000
+     ```
+  
+  5. Check firewall rules
+  6. Verify you're using the correct port
+</Accordion>
+
+<Accordion title="High latency or slow performance">
+  **Optimization tips:**
+  
+  1. Check if you're using direct connection or relay:
+     ```bash
+     tailscale status
+     # Look for "direct" vs "relay" in connection type
+     ```
+  
+  2. Enable UPnP/NAT-PMP on your router for direct connections
+  3. Try different exit nodes if using exit node feature
+  4. Check server resources:
+     ```bash
+     htop
+     ```
+  
+  5. Run network diagnostics:
+     ```bash
+     tailscale netcheck
+     ```
+</Accordion>
+
+<Accordion title="Tailscale disconnects frequently on mobile">
+  **iOS fixes:**
+  - Settings > Tailscale > Allow unlimited background usage
+  - Disable "Low Power Mode" which can kill VPN connections
+  - Keep Tailscale app updated
+  
+  **Android fixes:**
+  - Settings > Apps > Tailscale > Battery > Unrestricted
+  - Disable battery optimization for Tailscale
+  - Settings > Tailscale > Enable "Always-on VPN"
+</Accordion>
+
+## Security Best Practices
+
+<Warning>
+  While Tailscale is secure by default, follow these practices for maximum security:
+</Warning>
+
+1. **Enable Two-Factor Authentication (2FA)** on your Tailscale account
+2. **Use ACLs** to restrict access between devices
+3. **Regularly review** connected devices in admin console
+4. **Remove old devices** you no longer use
+5. **Keep Tailscale updated** on all devices
+6. **Use Key Expiry** to force periodic re-authentication
+7. **Monitor access logs** in the admin console
+8. **Don't share your Tailscale account** - add users individually if needed
+
+## Alternative VPN Solutions
+
+While this guide focuses on Tailscale, you can also use:
+
+- **WireGuard** - More control but requires manual configuration
+- **ZeroTier** - Similar to Tailscale with different feature set
+- **Cloudflare Tunnel** - Good for HTTP services, different architecture
+- **OpenVPN** - Traditional VPN, more complex setup
+- **Twingate** - Enterprise alternative to Tailscale
+
+Tailscale is recommended for ease of use and zero-config setup.
+
+## Next Steps
+
+- [Access Portal from mobile devices](/guides/mobile-access)
+- [Manage multiple projects](/guides/multiple-projects)
+- [Troubleshooting guide](/guides/troubleshooting)

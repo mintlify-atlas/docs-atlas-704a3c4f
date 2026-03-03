@@ -1,0 +1,189 @@
+---
+title: Chat Interface
+description: Interact with AI agents through the conversation interface
+icon: message-square
+---
+
+The chat interface is where you communicate with OpenCode AI agents to accomplish your coding tasks. It provides a rich, interactive experience for natural language programming.
+
+## Composing Messages
+
+### Message Input
+
+The message input area is located at the bottom of the screen and features:
+
+- **Multi-line text area** - Automatically resizes as you type (up to a maximum height)
+- **File mentions** - Use `@` to reference files in your project
+- **Keyboard shortcuts** - `Enter` to send, `Shift + Enter` for new lines
+
+<Tip>
+  The text area supports up to 5 rows by default, with scrolling for longer messages.
+</Tip>
+
+### Sending Messages
+
+<Tabs>
+  <Tab title="Desktop">
+    - Press `Enter` to send your message
+    - Press `Shift + Enter` to add a new line
+    - Click the **Send** button to submit
+  </Tab>
+  <Tab title="Mobile">
+    - Tap the **Send** button to submit your message
+    - Use the keyboard's return key for new lines
+  </Tab>
+</Tabs>
+
+The **Send** button is disabled until you type at least one character, preventing accidental empty messages.
+
+## Conversation Display
+
+### Message Types
+
+The chat interface displays two types of messages:
+
+<CardGroup cols={2}>
+  <Card title="User Messages" icon="user">
+    Your messages appear with a user icon and are styled in a muted color for clear distinction.
+  </Card>
+  <Card title="AI Responses" icon="sparkles">
+    AI agent responses appear with a sparkle icon and feature rich markdown formatting.
+  </Card>
+</CardGroup>
+
+### Message Formatting
+
+AI responses support full GitHub-flavored markdown, including:
+
+- Code blocks with syntax highlighting
+- Lists and nested lists
+- Tables
+- Links
+- Blockquotes
+- **Bold** and *italic* text
+
+### Tool Call Indicators
+
+When the AI agent uses tools, you'll see visual indicators showing:
+
+<Steps>
+  <Step title="Tool Icon">
+    Each tool has a unique icon (e.g., pen for `edit`, eye for `read`, terminal for `bash`)
+  </Step>
+  <Step title="Tool Name and Target">
+    The specific tool being used and what file or command it's operating on
+  </Step>
+  <Step title="Status Indicator">
+    - **Running** - Yellow text with animated ellipsis
+    - **Completed** - Muted gray text
+    - **Error** - Red text
+  </Step>
+  <Step title="Additional Details">
+    Context like line counts for file writes or diff stats for edits
+  </Step>
+</Steps>
+
+#### Tool Display Examples
+
+Here's what you'll see for common tool calls:
+
+- **Edit**: `✏️ edit src/app.ts (+12-5)` - Shows additions and deletions
+- **Read**: `👁 read package.json` - Shows which file is being read
+- **Write**: `✒️ write config.ts (45 lines)` - Shows total lines written
+- **Bash**: `$ npm install` - Shows the command with description
+- **Glob**: `🔍 glob *.tsx in src/components` - Shows search pattern and path
+
+## Message Queue
+
+OpenCode Portal uses an intelligent message queue system:
+
+### Sequential Processing
+
+- Messages are processed one at a time
+- New messages added while the AI is thinking are queued
+- Queued messages display a **"Queued"** badge
+- Messages are automatically processed in order
+
+### Visual Feedback
+
+<AccordionGroup>
+  <Accordion title="Sending State">
+    When sending a message, the interface shows:
+    - Button text changes to **"Sending..."**
+    - A "Thinking..." indicator with animated ripple effect
+  </Accordion>
+  
+  <Accordion title="Queued State">
+    When messages are queued:
+    - A yellow **"Queued"** badge appears on the message
+    - The badge disappears when processing begins
+  </Accordion>
+  
+  <Accordion title="Error State">
+    If a message fails to send:
+    - An error message appears in red
+    - The failed message is removed from the queue
+    - You can try sending again
+  </Accordion>
+</AccordionGroup>
+
+## Model and Agent Selection
+
+Below the message input, you can configure how the AI responds:
+
+### Agent Selection
+
+Choose which specialized agent handles your request:
+
+- **Default**: The standard agent for general tasks
+- **Plan**: Specialized for planning and task breakdown
+- **Custom agents**: Any additional agents configured in your instance
+
+Each agent shows a description when you hover over it.
+
+### Model Selection
+
+<Note>
+  Model selection is only available when **not** using a specialized agent. Agents have pre-configured model settings.
+</Note>
+
+When using the default agent, you can select:
+
+- **Provider**: OpenAI, Anthropic, etc.
+- **Model**: Specific model version (e.g., GPT-4, Claude 3.5 Sonnet)
+
+The model selector includes a searchable dropdown for quick access to your configured models.
+
+## Auto-Scrolling
+
+The chat interface features intelligent auto-scrolling:
+
+- **New messages**: Automatically scrolls to bottom when new messages arrive
+- **Manual scroll**: If you scroll up to read history, auto-scroll pauses
+- **Near bottom**: Auto-scroll resumes when you're within 100px of the bottom
+- **Initial load**: Automatically scrolls to the latest message when opening a session
+
+<Tip>
+  The scroll position is tracked per session. Switching sessions preserves your scroll position.
+</Tip>
+
+## Empty Session State
+
+When you open a new session with no messages:
+
+- A centered message shows **"No messages yet"**
+- The input area is ready for your first message
+- All agent and model selections are available
+
+## Error Handling
+
+If errors occur:
+
+- **Message loading errors** appear at the top of the chat
+- **Send errors** appear above the input area
+- Errors are displayed in red with clear descriptions
+- You can retry failed operations
+
+<Warning>
+  If you encounter persistent errors, check your instance connection in the instance management screen.
+</Warning>

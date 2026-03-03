@@ -1,0 +1,619 @@
+---
+title: Command-Line Options
+description: Complete reference for all OpenPortal CLI flags and options
+---
+
+## Global Options
+
+These options work with all commands unless otherwise noted.
+
+### -h, --help
+
+Display help information and exit.
+
+<ParamField path="--help" type="boolean" default="false">
+  Show help message with usage, commands, and examples
+</ParamField>
+
+**Short form:** `-h`
+
+```bash
+openportal --help
+openportal -h
+```
+
+**Behavior:**
+- Displays help text and exits
+- Overrides all other commands and options
+- Works from any directory
+
+---
+
+### -d, --directory
+
+Specify the working directory for the OpenCode instance.
+
+<ParamField path="--directory" type="string" default="current directory">
+  Absolute or relative path to the project directory
+</ParamField>
+
+**Short form:** `-d`
+
+```bash
+openportal --directory /path/to/project
+openportal -d ./my-project
+openportal /path/to/project  # Can also pass as first argument
+```
+
+**Default:** Current working directory (`process.cwd()`)
+
+**Behavior:**
+- Path is resolved to absolute path
+- Used as the working directory for OpenCode server
+- Used to identify instances (one instance per directory)
+- Directory basename becomes default instance name
+- In Docker mode, directory is mounted into the container at the same path
+
+**Examples:**
+
+```bash
+# Start in specific directory
+openportal -d ~/projects/my-app
+```
+
+```bash
+# Start in parent directory
+openportal -d ..
+```
+
+```bash
+# Directory as first argument
+openportal ~/projects/my-app
+```
+
+---
+
+### -p, --port
+
+Specify the port for the Web UI server.
+
+<ParamField path="--port" type="number" default="3000">
+  Port number for the Web UI (1-65535)
+</ParamField>
+
+**Short form:** `-p`
+
+```bash
+openportal --port 8080
+openportal -p 8080
+```
+
+**Default:** `3000` (or next available port)
+
+**Behavior:**
+- If port is not specified, OpenPortal attempts to use port 3000
+- If port 3000 is in use, automatically finds the next available port
+- If port is explicitly specified but unavailable, OpenPortal will fail
+- Only applicable to default command (not `run` command)
+- Port is bound to the hostname specified by `--hostname`
+
+**Examples:**
+
+```bash
+# Use port 8080 for Web UI
+openportal --port 8080
+```
+
+```bash
+# Let OpenPortal auto-select port (starts at 3000)
+openportal
+```
+
+<Note>
+The `run` command does not start a Web UI, so the `--port` option is ignored for that command.
+</Note>
+
+---
+
+### --opencode-port
+
+Specify the port for the OpenCode server.
+
+<ParamField path="--opencode-port" type="number" default="4000">
+  Port number for the OpenCode API server (1-65535)
+</ParamField>
+
+```bash
+openportal --opencode-port 5000
+```
+
+**Default:** `4000` (or next available port)
+
+**Behavior:**
+- If port is not specified, OpenPortal attempts to use port 4000
+- If port 4000 is in use, automatically finds the next available port
+- If port is explicitly specified but unavailable, OpenPortal will fail
+- Port is bound to the hostname specified by `--hostname`
+- In Docker mode, port is mapped from container to host
+
+**Examples:**
+
+```bash
+# Run OpenCode server on port 5000
+openportal run --opencode-port 5000
+```
+
+```bash
+# Start both services with custom ports
+openportal --port 8080 --opencode-port 9000
+```
+
+---
+
+### --hostname
+
+Specify the hostname or IP address to bind servers to.
+
+<ParamField path="--hostname" type="string" default="0.0.0.0">
+  Hostname or IP address for server binding
+</ParamField>
+
+```bash
+openportal --hostname 127.0.0.1
+openportal --hostname 0.0.0.0
+openportal --hostname 192.168.1.100
+```
+
+**Default:** `0.0.0.0`
+
+**Common Values:**
+- `0.0.0.0` - Bind to all network interfaces (accessible from network)
+- `127.0.0.1` - Bind to localhost only (local access only)
+- Specific IP - Bind to specific network interface
+
+**Behavior:**
+- Both OpenCode server and Web UI bind to this hostname
+- In Docker mode, the container binds to `0.0.0.0` internally, but port mapping uses the specified hostname
+- Display URLs use `localhost` when hostname is `0.0.0.0`
+
+**Security Considerations:**
+
+<Warning>
+Using `0.0.0.0` makes your instance accessible from other machines on the network. Use `127.0.0.1` for local-only access.
+</Warning>
+
+**Examples:**
+
+```bash
+# Local access only
+openportal --hostname 127.0.0.1
+```
+
+```bash
+# Accessible from network
+openportal --hostname 0.0.0.0
+```
+
+```bash
+# Bind to specific interface
+openportal --hostname 192.168.1.100
+```
+
+---
+
+### --name
+
+Specify a custom name for the instance.
+
+<ParamField path="--name" type="string" default="directory basename">
+  Custom name to identify the instance
+</ParamField>
+
+```bash
+openportal --name my-custom-name
+```
+
+**Default:** Directory basename (e.g., `my-project` from `/path/to/my-project`)
+
+**Behavior:**
+- Used to identify instances in `openportal list` output
+- Used in Docker container names: `openportal-{name}-{random-id}`
+- Helpful when running multiple instances
+- Can be used with `openportal stop --name` to stop specific instance
+
+**Examples:**
+
+```bash
+# Start with custom name
+openportal --name production-api
+```
+
+```bash
+# Stop by name
+openportal stop --name production-api
+```
+
+```bash
+# Multiple instances with different names
+openportal -d ~/proj-a --name proj-a --port 3000
+openportal -d ~/proj-b --name proj-b --port 3001
+openportal list
+```
+
+---
+
+### --docker
+
+Run OpenCode in a Docker container instead of as a local process.
+
+<ParamField path="--docker" type="boolean" default="false">
+  Enable Docker mode for OpenCode server
+</ParamField>
+
+```bash
+openportal --docker
+openportal run --docker
+```
+
+**Default:** `false` (process mode)
+
+**Behavior:**
+- OpenCode runs in a Docker container
+- Web UI still runs as a local process (default command only)
+- Working directory is mounted into container
+- Container uses image specified by `OPENCODE_DOCKER_IMAGE` environment variable
+- Container is created with `AutoRemove: true` for automatic cleanup
+- Validates mount path for security (prevents mounting system directories)
+- If image doesn't exist locally, automatically pulls from registry
+
+**Requirements:**
+- Docker daemon must be running
+- Docker socket accessible (`/var/run/docker.sock` on Unix, `//./pipe/docker_engine` on Windows)
+- Working directory must be an absolute path
+- Working directory cannot be a sensitive system directory
+
+**Docker Image:**
+
+Default: `ghcr.io/anomalyco/opencode:1.1.3`
+
+Customize with environment variable:
+
+```bash
+export OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:latest
+openportal --docker
+```
+
+**Examples:**
+
+```bash
+# Start OpenPortal with OpenCode in Docker
+openportal --docker
+```
+
+```bash
+# Start only OpenCode server in Docker
+openportal run --docker
+```
+
+```bash
+# Docker mode with custom settings
+openportal --docker \
+  --name my-app \
+  --opencode-port 5000 \
+  -d /home/user/project
+```
+
+**Example Output:**
+
+```
+Starting OpenPortal...
+  Name: my-project
+  Directory: /home/user/my-project
+  Web UI Port: 3000
+  OpenCode Port: 4000
+  Hostname: 0.0.0.0
+  Mode: Docker
+Starting OpenCode in Docker container...
+  Image: ghcr.io/anomalyco/opencode:1.1.3
+  Mount: /home/user/my-project -> /home/user/my-project
+  Image ghcr.io/anomalyco/opencode:1.1.3 already available locally
+  Container ID: a1b2c3d4e5f6
+  Container Name: openportal-my-project-abc123
+Starting Web UI server...
+
+✅ OpenPortal started!
+   Container ID: a1b2c3d4e5f6
+   Web UI PID: 12346
+
+📱 Access OpenPortal at http://localhost:3000
+🔧 OpenCode API at http://localhost:4000
+```
+
+**Security Validations:**
+
+OpenPortal blocks mounting of sensitive directories:
+
+**Unix/Linux:**
+```bash
+# These will fail
+openportal --docker -d /
+openportal --docker -d /etc
+openportal --docker -d /usr
+openportal --docker -d /bin
+openportal --docker -d /root
+```
+
+**Windows:**
+```bash
+# These will fail
+openportal --docker -d C:/
+openportal --docker -d C:/Windows
+openportal --docker -d "C:/Program Files"
+```
+
+---
+
+## Option Combinations
+
+### All Options Together
+
+```bash
+openportal \
+  --name my-app \
+  --directory ~/projects/my-app \
+  --port 8080 \
+  --opencode-port 9000 \
+  --hostname 127.0.0.1 \
+  --docker
+```
+
+### Common Patterns
+
+**Local development:**
+```bash
+openportal -d ./my-project
+```
+
+**Custom ports:**
+```bash
+openportal -p 8080 --opencode-port 9000
+```
+
+**Docker with custom name:**
+```bash
+openportal --docker --name prod-sim
+```
+
+**API server only:**
+```bash
+openportal run --opencode-port 5000 --hostname 127.0.0.1
+```
+
+**Multiple instances:**
+```bash
+# Instance 1
+openportal -d ~/proj1 --name proj1 -p 3000 --opencode-port 4000
+
+# Instance 2
+openportal -d ~/proj2 --name proj2 -p 3001 --opencode-port 4001
+```
+
+---
+
+## Environment Variables
+
+In addition to command-line options, OpenPortal supports environment variables:
+
+### OPENCODE_DOCKER_IMAGE
+
+<ParamField path="OPENCODE_DOCKER_IMAGE" type="string" default="ghcr.io/anomalyco/opencode:1.1.3">
+  Docker image to use when running in Docker mode
+</ParamField>
+
+```bash
+export OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:latest
+openportal --docker
+```
+
+### DOCKER_HOST
+
+<ParamField path="DOCKER_HOST" type="string" default="platform-specific">
+  Docker daemon connection string
+</ParamField>
+
+**Supported formats:**
+- `unix:///var/run/docker.sock` - Unix socket
+- `tcp://localhost:2375` - TCP connection
+- `npipe:////./pipe/docker_engine` - Windows named pipe
+
+**Default values:**
+- Unix/Linux/macOS: `/var/run/docker.sock`
+- Windows: `//./pipe/docker_engine`
+
+```bash
+export DOCKER_HOST=tcp://localhost:2375
+openportal --docker
+```
+
+### DEBUG
+
+<ParamField path="DEBUG" type="boolean" default="false">
+  Enable debug logging for Docker operations
+</ParamField>
+
+```bash
+export DEBUG=true
+openportal --docker
+```
+
+Enables debug output for Docker operations like container checks and cleanup.
+
+---
+
+## Option Parsing Rules
+
+### Long Options
+
+```bash
+# With equals sign
+openportal --port=8080
+
+# With space
+openportal --port 8080
+```
+
+### Short Options
+
+```bash
+# With space (recommended)
+openportal -p 8080
+
+# Short options cannot use equals sign
+openportal -p=8080  # This will NOT work
+```
+
+### Boolean Flags
+
+```bash
+# Boolean flag (no value needed)
+openportal --docker
+openportal --help
+
+# These are equivalent
+openportal --docker
+openportal --docker=true
+```
+
+### Multiple Options
+
+```bash
+# Options can appear in any order
+openportal --port 8080 -d ./project --name myapp
+openportal -d ./project --name myapp --port 8080
+```
+
+### Directory as Argument
+
+```bash
+# Directory can be passed as first argument
+openportal /path/to/project
+openportal .
+
+# Equivalent to
+openportal --directory /path/to/project
+openportal -d .
+```
+
+---
+
+## Command-Specific Option Availability
+
+### Default Command
+
+Supports all options:
+- `-h, --help`
+- `-d, --directory`
+- `-p, --port`
+- `--opencode-port`
+- `--hostname`
+- `--name`
+- `--docker`
+
+### run Command
+
+Supports:
+- `-h, --help`
+- `-d, --directory`
+- `--opencode-port` (not `--port`)
+- `--hostname`
+- `--name`
+- `--docker`
+
+### stop Command
+
+Supports:
+- `-h, --help`
+- `-d, --directory`
+- `--name`
+
+### list / ls Command
+
+Supports:
+- `-h, --help`
+
+### clean Command
+
+Supports:
+- `-h, --help`
+
+---
+
+## Examples by Use Case
+
+### Development Setup
+
+```bash
+# Simple local development
+openportal
+
+# Development with custom directory
+openportal -d ~/code/my-app
+
+# Development with specific ports to avoid conflicts
+openportal -p 8080 --opencode-port 9000
+```
+
+### Docker Development
+
+```bash
+# Use Docker for consistency
+openportal --docker
+
+# Docker with custom image version
+OPENCODE_DOCKER_IMAGE=ghcr.io/anomalyco/opencode:beta openportal --docker
+
+# Docker on specific ports
+openportal --docker -p 8080 --opencode-port 9000
+```
+
+### API Integration
+
+```bash
+# Run only OpenCode API server
+openportal run
+
+# API server on specific port
+openportal run --opencode-port 5000
+
+# API server accessible only locally
+openportal run --hostname 127.0.0.1 --opencode-port 5000
+```
+
+### Multiple Projects
+
+```bash
+# Project 1 on default ports
+openportal -d ~/projects/proj1 --name proj1
+
+# Project 2 on different ports
+openportal -d ~/projects/proj2 --name proj2 -p 3001 --opencode-port 4001
+
+# List all running projects
+openportal list
+
+# Stop specific project
+openportal stop --name proj1
+```
+
+### Network Access
+
+```bash
+# Accessible from local network
+openportal --hostname 0.0.0.0
+
+# Local access only (secure)
+openportal --hostname 127.0.0.1
+
+# Bind to specific network interface
+openportal --hostname 192.168.1.100 -p 80 --opencode-port 8080
+```
