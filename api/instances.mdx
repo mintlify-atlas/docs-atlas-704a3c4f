@@ -411,3 +411,44 @@ GET /api/opencode/:port/agents
 ```bash
 curl http://localhost:3000/api/opencode/3100/agents
 ```
+
+---
+
+## System Endpoints
+
+### Get System Hostname
+
+Retrieve the system hostname where Portal is running:
+
+```http
+GET /api/system/hostname
+```
+
+#### Authentication
+
+No authentication required.
+
+#### Response
+
+<ResponseField name="hostname" type="string">
+  The system hostname
+</ResponseField>
+
+#### Example
+
+```bash
+curl http://localhost:3000/api/system/hostname
+```
+
+```json Response
+{
+  "hostname": "my-server"
+}
+```
+
+#### Use Cases
+
+This endpoint is useful for:
+- Displaying the server name in the UI
+- Identifying which server you're connected to when managing multiple instances
+- Debugging connection issues in remote setups
